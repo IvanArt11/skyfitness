@@ -64,7 +64,7 @@ export const TrainingPage = ({ courses }) => {
       ];
     });
     fetch(
-      "https://skyfitnesspro-workout-default-rtdb.europe-west1.firebasedatabase.app/.json",
+      "https://fitness-pro-6b7ae-default-rtdb.europe-west1.firebasedatabase.app/.json",
       {
         method: "PATCH",
         body: JSON.stringify(patchData),

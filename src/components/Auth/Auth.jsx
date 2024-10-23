@@ -19,66 +19,105 @@ export default function AuthPage({ isLoginMode = false }) {
   let navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const loginUser = (email, password) => {
-    const auth = getAuth();
+  const validateLogin = () => {
     if (!email || !password) {
       setError("Заполните все поля");
-      return;
+      return false;
     }
-    setDisable(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then(({ user }) => {
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", JSON.stringify(user.accessToken));
-        console.log("user ->", user);
-        dispatch(
-          setUser({
-            email: user.email,
-            id: user.uid,
-            login: user.login,
-            password: user.password,
-            token: user.accessToken,
-          })
-        );
-        navigate("/");
-      })
-      .catch(console.error)
-      .finally(() => {
-        setDisable(false);
-      });
+    setError(null);
+    return true;
   };
 
-  const registerUser = (email, password, repeatPassword) => {
-    const auth = getAuth();
+  const validateRegistration = () => {
     if (!email || !password || !repeatPassword) {
       setError("Заполните все поля");
-      return;
+      return false;
     }
     if (password !== repeatPassword) {
       setError("Пароли не совпадают");
-      return;
+      return false;
     }
+    setError(null);
+    return true;
+  };
+
+  const loginUser = async (email, password) => {
+    if (!validateLogin()) return;
+
+    const auth = getAuth();
     setDisable(true);
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(({ user }) => {
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", JSON.stringify(user.accessToken));
-        console.log("user ->", user);
-        dispatch(
-          setUser({
-            email: user.email,
-            id: user.uid,
-            login: user.login,
-            password: user.password,
-            token: user.accessToken,
-          })
-        );
-        navigate("/");
-      })
-      .catch(console.error)
-      .finally(() => {
-        setDisable(false);
-      });
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", JSON.stringify(user.accessToken));
+      console.log("user ->", user);
+      dispatch(
+        setUser({
+          email: user.email,
+          id: user.uid,
+          token: user.accessToken,
+        })
+      );
+      navigate("/");
+    } catch (error) {
+      // Обработка ошибок Firebase
+      switch (error.code) {
+        case "auth/user-not-found":
+          setError("Пользователь с такой почтой не найден.");
+          break;
+        case "auth/wrong-password":
+          setError("Неверный пароль.");
+          break;
+        case "auth/too-many-requests":
+          setError("Слишком много попыток. Попробуйте позже.");
+          break;
+        default:
+          setError("Ошибка при авторизации: " + error.message);
+          break;
+      }
+    } finally {
+      setDisable(false);
+    }
+  };
+
+  const registerUser = async (email, password, repeatPassword) => {
+    if (!validateRegistration()) return;
+
+    const auth = getAuth();
+    setDisable(true);
+    try {
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", JSON.stringify(user.accessToken));
+      console.log("user ->", user);
+      dispatch(
+        setUser({
+          email: user.email,
+          id: user.uid,
+          token: user.accessToken,
+        })
+      );
+      navigate("/");
+    } catch (error) {
+      // Обработка ошибок Firebase
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          setError("Пользователь с такой почтой уже зарегистрирован.");
+          break;
+        case "auth/weak-password":
+          setError("Пароль слишком слабый.");
+          break;
+        default:
+          setError("Ошибка при регистрации: " + error.message);
+          break;
+      }
+    } finally {
+      setDisable(false);
+    }
   };
 
   useEffect(() => {
@@ -101,18 +140,14 @@ export default function AuthPage({ isLoginMode = false }) {
                 name="login"
                 placeholder="Логин"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                }}
+                onChange={(event) => setEmail(event.target.value)}
               />
               <S.ModalInput
                 type="password"
                 name="password"
                 placeholder="Пароль"
                 value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                }}
+                onChange={(event) => setPassword(event.target.value)}
               />
             </S.Inputs>
             {error && <S.Error>{error}</S.Error>}
@@ -124,7 +159,6 @@ export default function AuthPage({ isLoginMode = false }) {
                   Войти
                 </S.PrimaryButton>
               )}
-
               <Link to="/signup">
                 <S.SecondaryButton>Зарегистрироваться</S.SecondaryButton>
               </Link>
@@ -138,27 +172,21 @@ export default function AuthPage({ isLoginMode = false }) {
                 name="login"
                 placeholder="Почта"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                }}
+                onChange={(event) => setEmail(event.target.value)}
               />
               <S.ModalInput
                 type="password"
                 name="password"
                 placeholder="Пароль"
                 value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                }}
+                onChange={(event) => setPassword(event.target.value)}
               />
               <S.ModalInput
                 type="password"
                 name="repeat-password"
                 placeholder="Повторите пароль"
                 value={repeatPassword}
-                onChange={(event) => {
-                  setRepeatPassword(event.target.value);
-                }}
+                onChange={(event) => setRepeatPassword(event.target.value)}
               />
             </S.Inputs>
             {error && <S.Error>{error}</S.Error>}

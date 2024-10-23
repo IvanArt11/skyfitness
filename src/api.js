@@ -1,6 +1,6 @@
 export async function getCourses() {
   const response = await fetch(
-    "https://skyfitnesspro-workout-default-rtdb.europe-west1.firebasedatabase.app/courses.json"
+    "https://fitness-pro-6b7ae-default-rtdb.europe-west1.firebasedatabase.app/courses.json"
   ).catch((error) => {
     throw new Error("Не удалось загрузить список тренировок, попробуйте позже");
   });
@@ -11,7 +11,7 @@ export async function getCourses() {
 
 export async function getWorkout() {
   const response = await fetch(
-    "https://skyfitnesspro-workout-default-rtdb.europe-west1.firebasedatabase.app/workout.json"
+    "https://fitness-pro-6b7ae-default-rtdb.europe-west1.firebasedatabase.app/workout.json"
   ).catch((error) => {
     throw new Error("Не удалось загрузить список упражнений, попробуйте позже");
   });

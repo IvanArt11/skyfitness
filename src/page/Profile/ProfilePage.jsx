@@ -132,26 +132,28 @@ export const ProfilePage = ({ courses }) => {
         <S.Title>Мои курсы</S.Title>
         {dataCourses ? (
           <S.CourseItems>
-            {courseCards.map((item, index) => {
-              if (
-                dataCourses[item.courseId].users.find(
-                  (obj) => obj.userId === userId
-                )
-              ) {
-                return (
-                  <S.Item key={index}>
-                    <S.ItemImg src={item.img} alt={item.alt} />
-                    <S.ItemTitle>{item.title}</S.ItemTitle>
-                    <S.GreenButton
-                      onClick={() => handleClickGreenButton(item.block)}
-                    >
-                      Перейти
-                    </S.GreenButton>
-                  </S.Item>
-                );
-              }
-            })}
-          </S.CourseItems>
+  {courseCards.map((item, index) => {
+    const course = dataCourses[item.courseId]; // Получаем курс по его ID
+
+    if (course && course.users) {
+      // Проверяем, существует ли курс и его свойство users
+      if (course.users.find((obj) => obj.userId === userId)) {
+        return (
+          <S.Item key={index}>
+            <S.ItemImg src={item.img} alt={item.alt} />
+            <S.ItemTitle>{item.title}</S.ItemTitle>
+            <S.GreenButton onClick={() => handleClickGreenButton(item.block)}>
+              Перейти
+            </S.GreenButton>
+          </S.Item>
+        );
+      }
+    }
+
+    return null; // Если курс не найден, ничего не отображаем
+  })}
+</S.CourseItems>
+
         ) : (
           // тут должен быть скелетон
           <h1>Загрузка...</h1>
