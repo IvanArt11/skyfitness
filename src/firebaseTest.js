@@ -1,6 +1,7 @@
-import { auth, db, storage } from "./firebase";
+import { auth, db } from "./firebase";
+// import { auth, db, storage } from "./firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { ref, listAll } from "firebase/storage";
+// import { ref, listAll } from "firebase/storage";
 
 export const testFirebaseServices = async () => {
   try {
@@ -28,15 +29,20 @@ export const testFirebaseServices = async () => {
       }
     };
 
-    // Проверка Storage
+    // Проверка localStorage, Storage
     const storageTest = async () => {
       try {
-        const storageRef = ref(storage);
-        await listAll(storageRef);
-        console.log("Storage service status: Connected");
+        // const storageRef = ref(storage);
+        // await listAll(storageRef);
+        // console.log("Storage service status: Connected");
+        // Простая проверка доступности localStorage
+        localStorage.setItem("test", "test");
+        localStorage.removeItem("test");
+        console.log("Local Storage status: Available");
         return true;
       } catch (error) {
-        console.error("Storage service error:", error);
+        console.error("Local Storage error:", error);
+        // console.error("Storage service error:", error);
         return false;
       }
     };
@@ -55,7 +61,8 @@ export const testFirebaseServices = async () => {
       allServicesWorking: authResult && firestoreResult && storageResult,
     };
   } catch (error) {
-    console.error("Firebase services test failed:", error);
+    console.error("Services test failed:", error);
+    // console.error("Firebase services test failed:", error);
     return {
       auth: false,
       firestore: false,

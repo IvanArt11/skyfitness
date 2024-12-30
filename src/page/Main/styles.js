@@ -115,3 +115,31 @@ export const ContentFooterButton = styled.button`
     background-color: #ebffab;
   }
 `;
+
+export const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 20px;
+`;
+
+export const ErrorMessage = styled.p`
+  color: #ff0000;
+  margin-bottom: 20px;
+  text-align: center;
+`;
+
+export const RetryButton = styled.button`
+  padding: 10px 20px;
+  background-color: #580ea2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #3f007d;
+  }
+`;
