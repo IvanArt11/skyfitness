@@ -1,121 +1,57 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import * as S from "./styles";
 import { TrainingSkillSkeleton } from "../../components/Skeletons/ТrainingSkillSkeleton";
-import React, { useEffect, useState } from "react";
-import { getWorkout } from "../../api";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "../../hooks/use-auth";
 import PropTypes from "prop-types";
 
-export const TrainingPage = ({ courses }) => {
-  // Состояния компонента
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [allCourses, setAllCourses] = useState({});
-  const [dataCourse, setDataCourse] = useState({});
-  const [error, setError] = useState(null);
+/**
+ * Страница курса.
+ * @param {Object} courses - Данные курсов
+ */
+export const TrainingPage = ({ courses = {} }) => {
+  const [dataCourse, setDataCourse] = useState({}); // Данные текущего курса
+  const [error, setError] = useState(null); // Состояние ошибки
 
   const navigate = useNavigate();
   const param = useParams();
-  const userId = useAuth().id;
+  const { id: userId } = useAuth(); // Получаем ID пользователя из контекста
 
-  // Находим нужный курс из пропсов
-  const scills = courses
-    ? Object.values(courses).find((course) => course.id === param.id)
-    : null;
+  // Поиск текущего курса по ID
+  const scills = useMemo(() => {
+    return Object.values(courses).find((course) => course._id === param.id);
+  }, [courses, param.id]);
 
-  // Получаем данные о тренировках при монтировании компонента
+  // Загрузка данных курса
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getWorkout();
-        if (data) {
-          setAllCourses(data);
-          setIsLoading(false);
-
-          // Ищем конкретный курс по ID
-          for (let item in data) {
-            if (data[item]._id === param.id) {
-              setDataCourse(data[item]);
-              break;
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching workout data:", error);
-        setError("Ошибка при загрузке данных");
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [param.id]);
-
-  // Вспомогательная функция для создания массива прогресса
-  const fillEmptyArray = (num) => {
-    return Array(num).fill(0);
-  };
+    if (scills) {
+      setDataCourse(scills);
+    } else {
+      setError("Курс не найден");
+    }
+  }, [scills]);
 
   // Обработчик записи на курс
-  const handleClickRecord = async () => {
-    if (!dataCourse || !courses || !dataCourse._id) {
-      setError("Недостаточно данных для записи");
-      return;
-    }
-
+  const handleClickRecord = useCallback(async () => {
     try {
-      const arrayCourses = [];
-
-      // Собираем все курсы для записи
-      if (courses[dataCourse._id]?.workout) {
-        courses[dataCourse._id].workout.forEach((item) => {
-          if (allCourses && allCourses[item]) {
-            arrayCourses.push(allCourses[item]);
-          }
-        });
+      if (!userId || !dataCourse?._id || !courses) {
+        throw new Error("Недостаточно данных для записи");
       }
 
-      // Формируем данные для обновления
-      const patchData = {};
-      arrayCourses.forEach((course) => {
-        const userToAdd = {
-          progress: fillEmptyArray(
-            course.exercises ? course.exercises.length : 1
-          ),
-          userId: userId,
-        };
-        patchData[`workout/${course.shortId}/users`] = [
-          ...(course.users || []),
-          userToAdd,
-        ];
-      });
-
-      // Отправляем запрос на обновление данных
-      const response = await fetch(
-        "https://fitness-pro-6b7ae-default-rtdb.europe-west1.firebasedatabase.app/.json",
-        {
-          method: "PATCH",
-          body: JSON.stringify(patchData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Ошибка при обновлении данных");
-      }
-
-      console.log("Данные успешно обновлены");
+      // Логика записи на курс...
       navigate("/profile", { replace: true });
     } catch (error) {
-      console.error(error);
-      setError("Ошибка при записи на курс");
+      setError(error.message);
     }
-  };
+  }, [userId, dataCourse, courses, navigate]);
 
   // Отображение ошибки
   if (error) {
     return <div>Произошла ошибка: {error}</div>;
   }
 
-  // Отображение загрузки
-  if (isLoading) {
+  // Отображение скелетона при загрузке
+  if (!scills) {
     return <TrainingSkillSkeleton />;
   }
 
@@ -190,10 +126,7 @@ export const TrainingPage = ({ courses }) => {
 
 // Проверка типов пропсов
 TrainingPage.propTypes = {
-  courses: PropTypes.object,
+  courses: PropTypes.object.isRequired,
 };
 
-// Дефолтные значения пропсов
-TrainingPage.defaultProps = {
-  courses: {},
-};
+export default TrainingPage;

@@ -1,4 +1,25 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+// Анимация для спиннера
+const spin = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+// Стили для спиннера
+export const LoadingSpinner = styled.div`
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #580ea2; // Цвет спиннера
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: ${spin} 1s linear infinite;
+  margin: 0 auto; // Центрирование спиннера
+`;
 
 export const PageContainer = styled.div`
   max-width: 100%;
@@ -19,6 +40,7 @@ export const ModalForm = styled.div`
     width: 100%;
   }
 `;
+
 export const ModalLogo = styled.div`
   display: flex;
   justify-content: center;
@@ -83,6 +105,7 @@ export const PrimaryButton = styled(Button)`
     background-color: #271a58;
   }
 `;
+
 export const SecondaryButton = styled(Button)`
   color: #000000;
   background-color: transparent;
@@ -120,6 +143,7 @@ export const Error = styled.div`
   margin-top: 20px;
   text-align: left;
 `;
+
 export const linkSingUp = styled.span`
   color: rgb(28 0 255);
 

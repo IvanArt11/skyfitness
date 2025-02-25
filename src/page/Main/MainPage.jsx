@@ -6,38 +6,36 @@ import * as S from "./styles";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 
-export const MainPage = ({ courses }) => {
-  // Состояния компонента
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null); 
+// Константы для настройки
+const LOADING_TIME = 1100; // Время имитации загрузки
+const SKELETON_COUNT = 5; // Количество скелетонов
 
-  // Константы
-  const LOADING_TIME = 1100;
-  const SKELETON_COUNT = 5;
+/**
+ * Главная страница приложения.
+ * @param {Object} courses - Данные курсов
+ */
+export const MainPage = ({ courses = {} }) => {
+  const [isLoading, setIsLoading] = useState(true); // Состояние загрузки
+  const [error, setError] = useState(null); // Состояние ошибки
 
-  // Создаем мемоизированный массив скелетонов
+  // Мемоизированный массив скелетонов для загрузки
   const skeletonBlocks = useMemo(
     () =>
-      Array(SKELETON_COUNT)
-        .fill(null)
-        .map((_, index) => (
-          <TrainingBlockSkeleton
-            key={`skeleton-${index}`}
-            data-testid={`skeleton-block-${index}`}
-          />
-        )),
-    [SKELETON_COUNT]
+      Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+        <TrainingBlockSkeleton
+          key={`skeleton-${index}`}
+          data-testid={`skeleton-block-${index}`}
+        />
+      )),
+    []
   );
 
-  // Обработчик прокрутки наверх страницы
+  // Прокрутка наверх страницы
   const handleClickGoToUp = useCallback(() => {
     try {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      // Fallback для браузеров, не поддерживающих smooth scroll
+      // Fallback для браузеров без поддержки smooth scroll
       window.scrollTo(0, 0);
       console.error("Smooth scroll not supported:", err);
     }
@@ -52,15 +50,12 @@ export const MainPage = ({ courses }) => {
       return;
     }
 
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, LOADING_TIME);
-
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => setIsLoading(false), LOADING_TIME);
+    return () => clearTimeout(timer); // Очистка таймера при размонтировании
   }, [courses]); // добавлена зависимость courses
 
-  // Компонент отображения ошибки
-  const ErrorView = () => (
+  // Компонент для отображения ошибки
+  const renderErrorView = () => (
     <S.ErrorContainer data-testid="error-view">
       <S.ErrorMessage>{error}</S.ErrorMessage>
       <S.RetryButton onClick={() => window.location.reload()}>
@@ -69,8 +64,8 @@ export const MainPage = ({ courses }) => {
     </S.ErrorContainer>
   );
 
-  // Компонент загрузки
-  const LoadingView = () => (
+  // Компонент для отображения загрузки
+  const renderLoadingView = () => (
     <S.Wrapper data-testid="loading-view">
       <S.Container>
         <HeaderSkeleton />
@@ -81,8 +76,8 @@ export const MainPage = ({ courses }) => {
     </S.Wrapper>
   );
 
-  // Основной контент
-  const MainContent = () => (
+  // Компонент для отображения основного контента
+  const renderMainContent = () => (
     <S.Wrapper data-testid="main-content">
       <HeaderPurple />
       <S.Container>
@@ -117,24 +112,15 @@ export const MainPage = ({ courses }) => {
 
   // Условный рендеринг
   if (error) {
-    return <ErrorView />;
+    return renderErrorView();
   }
 
-  return isLoading ? <LoadingView /> : <MainContent />;
+  return isLoading ? renderLoadingView() : renderMainContent();
 };
 
-// Более детальная проверка типов пропсов
+// Проверка типов пропсов
 MainPage.propTypes = {
-  courses: PropTypes.shape({
-    id: PropTypes.string,
-    name: PropTypes.string,
-    description: PropTypes.string,
-    // Добавьте другие необходимые поля
-  }),
-};
-
-MainPage.defaultProps = {
-  courses: {},
+  courses: PropTypes.object.isRequired, // Меняем array на object
 };
 
 export default MainPage;

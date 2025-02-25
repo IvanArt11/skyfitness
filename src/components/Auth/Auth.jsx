@@ -1,64 +1,81 @@
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import * as S from "./styles.js";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { setUser } from "../../store/slices/userSlice";
 import { useDispatch } from "react-redux";
 import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
+import * as S from "./styles.js";
+import { setUser } from "../../store/slices/userSlice";
 
 export default function AuthPage({ isLoginMode = false }) {
-  const [error, setError] = useState(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
-  const [disable, setDisable] = useState(false);
-  let navigate = useNavigate();
-  const dispatch = useDispatch();
+  // Состояния для управления формой и ошибками
+  const [error, setError] = useState(null); // Состояние для хранения ошибок
+  const [email, setEmail] = useState(""); // Состояние для email
+  const [password, setPassword] = useState(""); // Состояние для пароля
+  const [repeatPassword, setRepeatPassword] = useState(""); // Состояние для повторного пароля (регистрация)
+  const [disable, setDisable] = useState(false); // Состояние для блокировки кнопок во время загрузки
 
+  const navigate = useNavigate(); // Хук для навигации между страницами
+  const dispatch = useDispatch(); // Хук для отправки действий в Redux
+
+  // Функция для валидации email
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  };
+
+  // Функция для валидации формы входа
   const validateLogin = () => {
     if (!email || !password) {
       setError("Заполните все поля");
+      return false;
+    }
+    if (!validateEmail(email)) {
+      setError("Введите корректный email");
       return false;
     }
     setError(null);
     return true;
   };
 
+  // Функция для валидации формы регистрации
   const validateRegistration = () => {
     if (!email || !password || !repeatPassword) {
       setError("Заполните все поля");
+      return false;
+    }
+    if (!validateEmail(email)) {
+      setError("Введите корректный email");
       return false;
     }
     if (password !== repeatPassword) {
       setError("Пароли не совпадают");
       return false;
     }
+    if (password.length < 6) {
+      setError("Пароль должен содержать минимум 6 символов");
+      return false;
+    }
     setError(null);
     return true;
   };
 
+  // Функция для входа пользователя
   const loginUser = async (email, password) => {
-    if (!validateLogin()) return;
+    if (!validateLogin()) return; // Проверка валидации перед входом
 
     const auth = getAuth();
-    setDisable(true);
+    setDisable(true); // Блокировка кнопки во время запроса
     try {
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", JSON.stringify(user.accessToken));
-      console.log("user ->", user);
+      const { user } = await signInWithEmailAndPassword(auth, email, password); // Вход через Firebase
+      localStorage.setItem("user", JSON.stringify(user)); // Сохранение данных пользователя в localStorage
+      localStorage.setItem("token", JSON.stringify(user.accessToken)); // Сохранение токена
       dispatch(
-        setUser({
-          email: user.email,
-          id: user.uid,
-          token: user.accessToken,
-        })
-      );
-      navigate("/");
+        setUser({ email: user.email, id: user.uid, token: user.accessToken })
+      ); // Обновление состояния пользователя в Redux
+      navigate("/"); // Перенаправление на главную страницу
     } catch (error) {
       // Обработка ошибок Firebase
       switch (error.code) {
@@ -76,32 +93,28 @@ export default function AuthPage({ isLoginMode = false }) {
           break;
       }
     } finally {
-      setDisable(false);
+      setDisable(false); // Разблокировка кнопки после завершения запроса
     }
   };
 
+  // Функция для регистрации пользователя
   const registerUser = async (email, password, repeatPassword) => {
-    if (!validateRegistration()) return;
+    if (!validateRegistration()) return; // Проверка валидации перед регистрацией
 
     const auth = getAuth();
-    setDisable(true);
+    setDisable(true); // Блокировка кнопки во время запроса
     try {
       const { user } = await createUserWithEmailAndPassword(
         auth,
         email,
         password
-      );
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", JSON.stringify(user.accessToken));
-      console.log("user ->", user);
+      ); // Регистрация через Firebase
+      localStorage.setItem("user", JSON.stringify(user)); // Сохранение данных пользователя в localStorage
+      localStorage.setItem("token", JSON.stringify(user.accessToken)); // Сохранение токена
       dispatch(
-        setUser({
-          email: user.email,
-          id: user.uid,
-          token: user.accessToken,
-        })
-      );
-      navigate("/");
+        setUser({ email: user.email, id: user.uid, token: user.accessToken })
+      ); // Обновление состояния пользователя в Redux
+      navigate("/"); // Перенаправление на главную страницу
     } catch (error) {
       // Обработка ошибок Firebase
       switch (error.code) {
@@ -116,10 +129,11 @@ export default function AuthPage({ isLoginMode = false }) {
           break;
       }
     } finally {
-      setDisable(false);
+      setDisable(false); // Разблокировка кнопки после завершения запроса
     }
   };
 
+  // Сброс ошибки при изменении режима (вход/регистрация) или полей формы
   useEffect(() => {
     setError(null);
   }, [isLoginMode, email, password, repeatPassword]);
@@ -127,13 +141,16 @@ export default function AuthPage({ isLoginMode = false }) {
   return (
     <S.PageContainer>
       <S.ModalForm>
+        {/* Логотип с ссылкой на страницу входа */}
         <Link to="/login">
           <S.ModalLogo>
             <S.ModalLogoImage src="/img/logo-dark.svg" alt="logo" />
           </S.ModalLogo>
         </Link>
+        {/* Условный рендеринг формы в зависимости от режима (вход/регистрация) */}
         {isLoginMode ? (
           <>
+            {/* Форма входа */}
             <S.Inputs>
               <S.ModalInput
                 type="text"
@@ -150,15 +167,18 @@ export default function AuthPage({ isLoginMode = false }) {
                 onChange={(event) => setPassword(event.target.value)}
               />
             </S.Inputs>
+            {/* Отображение ошибки, если она есть */}
             {error && <S.Error>{error}</S.Error>}
             <S.Buttons>
+              {/* Кнопка входа или спиннер загрузки */}
               {disable ? (
-                <p style={{ color: "#000" }}>Выполняется вход...</p>
+                <S.LoadingSpinner />
               ) : (
                 <S.PrimaryButton onClick={() => loginUser(email, password)}>
                   Войти
                 </S.PrimaryButton>
               )}
+              {/* Ссылка на страницу регистрации */}
               <Link to="/signup">
                 <S.SecondaryButton>Зарегистрироваться</S.SecondaryButton>
               </Link>
@@ -166,6 +186,7 @@ export default function AuthPage({ isLoginMode = false }) {
           </>
         ) : (
           <>
+            {/* Форма регистрации */}
             <S.Inputs>
               <S.ModalInput
                 type="text"
@@ -189,10 +210,12 @@ export default function AuthPage({ isLoginMode = false }) {
                 onChange={(event) => setRepeatPassword(event.target.value)}
               />
             </S.Inputs>
+            {/* Отображение ошибки, если она есть */}
             {error && <S.Error>{error}</S.Error>}
             <S.Buttons>
+              {/* Кнопка регистрации или спиннер загрузки */}
               {disable ? (
-                <p style={{ color: "#000" }}>Регистрируем пользователя...</p>
+                <S.LoadingSpinner />
               ) : (
                 <S.PrimaryButton
                   onClick={() => registerUser(email, password, repeatPassword)}
@@ -201,6 +224,7 @@ export default function AuthPage({ isLoginMode = false }) {
                 </S.PrimaryButton>
               )}
 
+              {/* Ссылка на страницу входа */}
               <p style={{ color: "#000" }}>
                 Уже есть аккаунт?{" "}
                 <Link to="/login">
