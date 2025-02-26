@@ -19,8 +19,8 @@ export const TrainingPage = ({ courses = {} }) => {
 
   // Поиск текущего курса по ID
   const scills = useMemo(() => {
-    return Object.values(courses).find((course) => course._id === param.id);
-  }, [courses, param.id]);
+    return Object.values(courses).find((course) => course._id === param._id);
+  }, [courses, param._id]);
 
   // Загрузка данных курса
   useEffect(() => {
@@ -59,7 +59,7 @@ export const TrainingPage = ({ courses = {} }) => {
     <div>
       <S.ScillCard>
         <S.ScillImg src="/img/Group.jpg" alt="scill" />
-        <S.ScillTitle>{scills?.name}</S.ScillTitle>
+        <S.ScillTitle>{scills?.nameRU}</S.ScillTitle>
       </S.ScillCard>
 
       <S.ScillDescription>
@@ -68,20 +68,13 @@ export const TrainingPage = ({ courses = {} }) => {
         </S.ScillDescriptionTitle>
 
         <S.Description>
-          <S.DescriptionTextOne>
-            <S.Circle>1</S.Circle>
-            <S.DescriptionText>{scills?.towards[0]}</S.DescriptionText>
-          </S.DescriptionTextOne>
-
-          <S.DescriptionTextOne>
-            <S.Circle>2</S.Circle>
-            <S.DescriptionText>{scills?.towards[1]}</S.DescriptionText>
-          </S.DescriptionTextOne>
-
-          <S.DescriptionTextOne>
-            <S.Circle>3</S.Circle>
-            <S.DescriptionText>{scills?.towards[2]}</S.DescriptionText>
-          </S.DescriptionTextOne>
+        
+          {scills?.towards?.map((item, index) => (
+            <S.DescriptionTextOne key={index}>
+              <S.Circle>{index + 1}</S.Circle>
+              <S.DescriptionText>{item}</S.DescriptionText>
+            </S.DescriptionTextOne>
+          ))}
         </S.Description>
       </S.ScillDescription>
 

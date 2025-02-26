@@ -8,12 +8,22 @@ import { LoginPage } from "./page/LogIn/LoginPage";
 import { TrainingVideoPage } from "./page/TrainingVideo/TrainingVideoPage";
 import { PageLayout } from "./components/PageLayout/PageLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import useCourses from "./hooks/useCourses"; // Импортируем хук для загрузки курсов
 
 /**
  * Компонент маршрутизации приложения.
- * @param {Object} courses - Данные курсов, передаваемые в компоненты
  */
-export const AppRoutes = ({ courses }) => {
+export const AppRoutes = () => {
+  const { courses, loading, error } = useCourses(); // Загружаем данные курсов
+
+  if (loading) {
+    return <div>Загрузка курсов...</div>; // Отображаем загрузку, пока данные не загружены
+  }
+
+  if (error) {
+    return <div>Ошибка: {error}</div>; // Отображаем ошибку, если она возникла
+  }
+
   return (
     <Routes>
       {/* Главная страница доступна всем */}
@@ -23,14 +33,14 @@ export const AppRoutes = ({ courses }) => {
       <Route path="/" element={<PageLayout />}>
         {/* Страница курса доступна всем */}
         <Route
-          path="courses/:id"
+          path="courses/:_id"
           element={<TrainingPage courses={courses} />}
         />
 
         {/* Защищённые маршруты */}
         <Route element={<ProtectedRoute redirectPath="/login" />}>
           {/* Страница с видео тренировки доступна только авторизованным пользователям */}
-          <Route path="training-video/:id" element={<TrainingVideoPage />} />
+          <Route path="training-video/:_id" element={<TrainingVideoPage />} />
 
           {/* Страница профиля доступна только авторизованным пользователям */}
           <Route path="profile" element={<ProfilePage courses={courses} />} />

@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app"; // Для инициализаци
 import { getAuth } from "firebase/auth"; // Для работы с аутентификацией
 import { getFirestore } from "firebase/firestore"; // Для работы с базой данных Firestore
 import { getStorage } from "firebase/storage"; // Для работы с хранилищем файлов
+import { getDatabase } from "firebase/database"; // Для работы с базой данных Realtime Database
 
 // Конфигурация Firebase, которая берется из переменных окружения
 const firebaseConfig = {
@@ -49,12 +50,13 @@ try {
 }
 
 // Инициализация сервисов Firebase
-let auth, db, storage;
+let auth, db, storage, realtimeDatabase;
 
 try {
   auth = getAuth(app); // Инициализация сервиса аутентификации
   db = getFirestore(app); // Инициализация Firestore (база данных)
   storage = getStorage(app); // Инициализация хранилища файлов
+  realtimeDatabase = getDatabase(app); // Инициализация Realtime Database
   console.log("Сервисы Firebase успешно инициализированы"); // Логирование успешной инициализации сервисов
 } catch (error) {
   console.error("Ошибка при инициализации сервисов Firebase:", error); // Логирование ошибки
@@ -62,7 +64,7 @@ try {
 }
 
 // Экспорт сервисов для использования в других частях приложения
-export { auth, db, storage };
+export { auth, db, storage, realtimeDatabase };
 
 // Экспорт приложения Firebase по умолчанию
 export default app;
