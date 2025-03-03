@@ -84,7 +84,7 @@ export const HeaderPurple = () => {
     <>
       <S.Header>
         <S.HeaderLogo to={"/"}>
-          <S.HeaderLogoImg src="/img/logo-light.svg" alt="logo" />
+          <S.HeaderLogoImg src="/img/logo-dark.svg" alt="logo" />
         </S.HeaderLogo>
         {exitForm && <ExitForm setExitForm={setExitForm} />}
         {isLogin ? (
@@ -104,7 +104,7 @@ export const HeaderPurple = () => {
             )}
             <img src="/img/avatar.svg" alt="avatar" />
             <S.NameLight>{login ? login : email}</S.NameLight>
-            <img src="/img/arrow-down-light.svg" alt="arrow-down" />
+            <img src="/img/arrow-down.svg" alt="arrow-down" />
           </S.Personal>
         ) : (
           <S.HeaderSectionButton>

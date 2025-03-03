@@ -21,6 +21,7 @@ export const Title = styled.h1`
   margin-bottom: 40px;
   font-size: 48px;
   color: #000;
+
   @media (max-width: 768px) {
     margin-bottom: 20px;
     font-size: 36px;
@@ -31,12 +32,44 @@ export const Title = styled.h1`
   }
 `;
 
-export const InfoBlock = styled.div``;
+export const ProfileContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 33px;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 30px;
+`;
+
+export const ProfileAvatarImg = styled.img`
+  width: 197px;
+  height: 197px;
+
+  @media (max-width: 480px) {
+    width: 150px;
+    height: 40px;
+  }
+`;
+
+export const InfoContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 30px;
+  background-color: #ffffff;
+`;
+
+export const InfoBlock = styled.div`
+  background-color: #ffffff;
+`;
 
 export const TextInfo = styled.p`
   margin-bottom: 20px;
   font-size: 24px;
   color: #000;
+  background-color: #ffffff;
+
   @media (max-width: 768px) {
     margin-bottom: 12px;
     font-size: 20px;
@@ -50,9 +83,10 @@ export const TextInfo = styled.p`
 export const ButtonBlock = styled.div`
   width: fit-content;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 14px;
-  margin-top: 20px;
+  justify-content: space-around;
+  flex-wrap: wrap;
 
   @media (max-width: 768px) {
     margin-top: 15px;
@@ -64,13 +98,14 @@ export const ButtonBlock = styled.div`
 `;
 
 export const Button = styled.button`
-  width: 100%;
+  width: 192px;
   border: 0;
   border-radius: 46px;
-  padding: 12px 41px;
+  padding: 16px 26px;
   background-color: #580ea2;
   color: #fff;
   font-size: 18px;
+  font-weight: 400;
 
   transition: background-color 0.2s ease-in-out;
   &:hover {

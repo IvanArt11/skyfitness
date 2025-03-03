@@ -89,7 +89,7 @@ export const Name = styled.p`
 `;
 
 export const NameLight = styled.p`
-  color: #fff;
+  color: #000000;
 
   @media (max-width: 768px) {
     display: none;

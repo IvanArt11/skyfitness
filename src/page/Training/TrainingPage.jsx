@@ -58,8 +58,8 @@ export const TrainingPage = ({ courses = {} }) => {
   return (
     <div>
       <S.ScillCard>
-        <S.ScillImg src="/img/Group.jpg" alt="scill" />
-        <S.ScillTitle>{scills?.nameRU}</S.ScillTitle>
+        <S.ScillImg src={`/img/training/skill card-${scills.nameEN}.jpg`} alt="scill" />
+        {/* <S.ScillTitle>{scills?.nameRU}</S.ScillTitle> */}
       </S.ScillCard>
 
       <S.ScillDescription>

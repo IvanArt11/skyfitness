@@ -29,10 +29,10 @@ export const ScillImg = styled.img`
 `;
 export const ScillTitle = styled.h1`
   position: absolute;
-  top: 30px;
-  left: 30px;
+  top: 40px;
+  left: 40px;
   z-index: 10;
-  color: #000;
+  color: #ffffff;
   font-size: 64px;
   font-style: normal;
   font-weight: 400;
@@ -66,8 +66,8 @@ export const ScillDescriptionTitle = styled.h2`
   color: #000;
   font-size: 40px;
   font-style: normal;
-  font-weight: 400;
-  line-height: 48px;
+  font-weight: 600;
+  line-height: 44px;
 
   @media (max-width: 767px) {
     font-size: 32px;
@@ -131,11 +131,11 @@ export const Circle = styled.div`
 `;
 export const DescriptionText = styled.p`
   color: #000;
-  font-size: 24px;
+  font-size: 40px;
   font-style: normal;
-  font-weight: 400;
-  line-height: 32px;
-  width: 244px;
+  font-weight: 600;
+  line-height: 44px;
+  ${'' /* width: 244px; */}
 
   @media (max-width: 767px) {
     width: 100%;
@@ -172,14 +172,19 @@ export const DirectionText = styled.h3`
   line-height: 48px;
 `;
 export const YogaDirection = styled.div`
-  width: 660px;
+  max-width: 1160px;
   margin-top: 22px;
-  margin-left: 25px;
+  ${"" /* margin-left: 25px; */}
   display: flex;
   justify-content: space-between;
+  background-color: #bcec30;
+  border-radius: 28px;
+  padding: 30px;
+  height: 146px;
 
   @media (max-width: 768px) {
     width: calc(100% - 25px);
+    height: 100%;
   }
 
   @media (max-width: 540px) {
@@ -191,10 +196,17 @@ export const YogaDirection = styled.div`
 `;
 export const YogaText = styled.li`
   color: #000;
+  background: #BCEC30;
   font-size: 24px;
   font-style: normal;
   font-weight: 400;
   line-height: 32px;
+  list-style-type: none; /* Убираем стандартные маркеры списка */
+  padding-left: 30px; /* Отступ для фонового изображения */
+  background-image: url('/img/Sparcle.svg');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 26px 26px; /* Размер фонового изображения */
 
   @media (max-width: 425px) {
     font-size: 18px;
@@ -316,6 +328,8 @@ export const PhoneImg = styled.img`
 export const Direct = styled.ul`
   list-style-position: inside;
   -webkit-column-count: 2;
+  gap: 124px;
+  background: #BCEC30;
 `;
 export const goToProfile = styled.button`
   border-radius: 46px;

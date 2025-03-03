@@ -113,47 +113,55 @@ export const ProfilePage = ({ courses }) => {
         />
       )}
       <S.ProfileBlock>
-        <S.Title>Мой профиль</S.Title>
-        <S.InfoBlock>
-          <S.TextInfo>Логин: {login ? login : email}</S.TextInfo>
-          <S.TextInfo>Пароль: {password ? password : "●●●●●●●●"}</S.TextInfo>
-        </S.InfoBlock>
-        <S.ButtonBlock>
-          <S.Button onClick={handleClickEditLogin}>
-            Редактировать логин
-          </S.Button>
-          <S.Button onClick={handleClickEditPassword}>
-            Редактировать пароль
-          </S.Button>
-        </S.ButtonBlock>
+        <S.Title>Профиль</S.Title>
+        <S.ProfileContainer>
+          <S.ProfileAvatarImg src="/img/avatar1.svg" alt="logo" />
+          <S.InfoContainer>
+            <S.InfoBlock>
+              <S.TextInfo>Логин: {login ? login : email}</S.TextInfo>
+              <S.TextInfo>
+                Пароль: {password ? password : "●●●●●●●●"}
+              </S.TextInfo>
+            </S.InfoBlock>
+            <S.ButtonBlock>
+              <S.Button onClick={handleClickEditLogin}>
+                Редактировать логин
+              </S.Button>
+              <S.Button onClick={handleClickEditPassword}>
+                Редактировать пароль
+              </S.Button>
+            </S.ButtonBlock>
+          </S.InfoContainer>
+        </S.ProfileContainer>
       </S.ProfileBlock>
 
       <S.CourseBlock>
         <S.Title>Мои курсы</S.Title>
         {dataCourses ? (
           <S.CourseItems>
-  {courseCards.map((item, index) => {
-    const course = dataCourses[item.courseId]; // Получаем курс по его ID
+            {courseCards.map((item, index) => {
+              const course = dataCourses[item.courseId]; // Получаем курс по его ID
 
-    if (course && course.users) {
-      // Проверяем, существует ли курс и его свойство users
-      if (course.users.find((obj) => obj.userId === userId)) {
-        return (
-          <S.Item key={index}>
-            <S.ItemImg src={item.img} alt={item.alt} />
-            <S.ItemTitle>{item.title}</S.ItemTitle>
-            <S.GreenButton onClick={() => handleClickGreenButton(item.block)}>
-              Перейти
-            </S.GreenButton>
-          </S.Item>
-        );
-      }
-    }
+              if (course && course.users) {
+                // Проверяем, существует ли курс и его свойство users
+                if (course.users.find((obj) => obj.userId === userId)) {
+                  return (
+                    <S.Item key={index}>
+                      <S.ItemImg src={item.img} alt={item.alt} />
+                      <S.ItemTitle>{item.title}</S.ItemTitle>
+                      <S.GreenButton
+                        onClick={() => handleClickGreenButton(item.block)}
+                      >
+                        Перейти
+                      </S.GreenButton>
+                    </S.Item>
+                  );
+                }
+              }
 
-    return null; // Если курс не найден, ничего не отображаем
-  })}
-</S.CourseItems>
-
+              return null; // Если курс не найден, ничего не отображаем
+            })}
+          </S.CourseItems>
         ) : (
           // тут должен быть скелетон
           <h1>Загрузка...</h1>
