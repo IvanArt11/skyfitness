@@ -1,10 +1,11 @@
-import { HeaderPurple } from "../../components/Header/Header";
+import { Header } from "../../components/Header/Header";
 import { TrainingBlock } from "../../components/TrainingBlock/TrainingBlock";
 import { HeaderSkeleton } from "../../components/Skeletons/HeaderSkeleton";
 import { TrainingBlockSkeleton } from "../../components/Skeletons/TrainingBlockSkeleton";
 import * as S from "./styles";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
+import ErrorBoundary from "../../components/TrainingBlock/ErrorBoundary";
 
 // Константы для настройки
 const LOADING_TIME = 1100; // Время имитации загрузки
@@ -79,7 +80,7 @@ export const MainPage = ({ courses = {} }) => {
   // Компонент для отображения основного контента
   const renderMainContent = () => (
     <S.Wrapper data-testid="main-content">
-      <HeaderPurple />
+      <Header isPurple={true} />
       <S.Container>
         <S.ContentDescription>
           <S.ContentDescriptionImg
@@ -95,7 +96,9 @@ export const MainPage = ({ courses = {} }) => {
           </S.ContentDescriptionTitle>
         </S.ContentDescription>
         <S.TrainingBlock>
-          <TrainingBlock courses={courses} />
+          <ErrorBoundary>
+            <TrainingBlock courses={courses} />
+          </ErrorBoundary>
         </S.TrainingBlock>
         <S.ContentFooter>
           <S.ContentFooterButton

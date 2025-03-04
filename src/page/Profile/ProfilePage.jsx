@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as S from "./style";
-import { useDispatch } from "react-redux";
-import { setNewLogin, setNewPassword } from "../../store/slices/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setNewLogin,
+  setNewPassword,
+  removeCourse,
+} from "../../store/slices/userSlice";
 import { useAuth } from "../../hooks/use-auth";
 import {
   getAuth,
@@ -10,47 +14,8 @@ import {
   reauthenticateWithCredential,
   updatePassword,
 } from "firebase/auth";
-import { getWorkout } from "../../api";
 
-const courseCards = [
-  {
-    courseId: "b1",
-    img: "/img/card-course/card-bodyflex1.jpeg",
-    alt: "card-bodyflex",
-    title: "Бодифлекс",
-    block: "bodyflex1",
-  },
-  {
-    courseId: "d1",
-    img: "/img/card-course/card-dance1.jpeg",
-    alt: "card-dance",
-    title: "Танцевальный фитнес",
-    block: "dance1",
-  },
-  {
-    courseId: "st1",
-    img: "/img/card-course/card-step1.jpeg",
-    alt: "card-step",
-    title: "Степ-аэробика",
-    block: "step1",
-  },
-  {
-    courseId: "s1",
-    img: "/img/card-course/card-stretching1.jpeg",
-    alt: "card-stretching",
-    title: "Стретчинг",
-    block: "stretching1",
-  },
-  {
-    courseId: "y1",
-    img: "/img/card-course/card-yoga1.jpeg",
-    alt: "card-yoga",
-    title: "Йога",
-    block: "yoga1",
-  },
-];
-
-export const ProfilePage = ({ courses }) => {
+export const ProfilePage = () => {
   const [openEditLogin, setOpenEditLogin] = React.useState(false);
   const [openFormOldPassword, setOpenFormOldPassword] = React.useState(false);
   const [openEditPassword, setOpenEditPassword] = React.useState(false);
@@ -59,43 +24,17 @@ export const ProfilePage = ({ courses }) => {
   const [dataCourses, setDataCourses] = useState(null);
   const [currentCourseBlock, setCurrentCourseBlock] = useState(null);
 
-  const userId = useAuth().id;
+  const dispatch = useDispatch();
+  const userCourses = useSelector((state) => state.user.courses); // Исправляем на state.user.courses
 
-  const handleClickEditLogin = () => {
-    document.body.style.overflow = "hidden";
-    setOpenEditLogin(true);
+  // Функция для удаления курса
+  const handleRemoveCourse = (courseId) => {
+    dispatch(removeCourse(courseId)); // Удаляем курс из списка
   };
-  const handleClickEditPassword = () => {
-    document.body.style.overflow = "hidden";
-    setOpenFormOldPassword(true);
-  };
-
-  const handleClickGreenButton = (courseBlock) => {
-    document.body.style.overflow = "hidden";
-    setOpenWorkoutSelection(true);
-    const exersicesCourse = [];
-    courses[courseBlock].workout.forEach((item) => {
-      exersicesCourse.push(dataCourses[item]);
-    });
-    setCurrentCourseBlock(exersicesCourse);
-  };
-
-  useEffect(() => {
-    const fetchData = () => {
-      getWorkout()
-        .then((data) => {
-          setDataCourses(data);
-        })
-        .catch((error) => {
-          console.error("Error fetching workout data:", error);
-        });
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <>
+      {/* Модальные окна для редактирования логина и пароля */}
       {openEditLogin && <NewLoginForm setOpenEditLogin={setOpenEditLogin} />}
       {openFormOldPassword && (
         <OldPasswordForm
@@ -112,6 +51,8 @@ export const ProfilePage = ({ courses }) => {
           setOpenWorkoutSelection={setOpenWorkoutSelection}
         />
       )}
+
+      {/* Блок профиля */}
       <S.ProfileBlock>
         <S.Title>Профиль</S.Title>
         <S.ProfileContainer>
@@ -124,10 +65,10 @@ export const ProfilePage = ({ courses }) => {
               </S.TextInfo>
             </S.InfoBlock>
             <S.ButtonBlock>
-              <S.Button onClick={handleClickEditLogin}>
+              <S.Button onClick={() => setOpenEditLogin(true)}>
                 Редактировать логин
               </S.Button>
-              <S.Button onClick={handleClickEditPassword}>
+              <S.Button onClick={() => setOpenFormOldPassword(true)}>
                 Редактировать пароль
               </S.Button>
             </S.ButtonBlock>
@@ -135,38 +76,66 @@ export const ProfilePage = ({ courses }) => {
         </S.ProfileContainer>
       </S.ProfileBlock>
 
+      {/* Блок "Мои курсы" */}
       <S.CourseBlock>
         <S.Title>Мои курсы</S.Title>
-        {dataCourses ? (
+        {userCourses && userCourses.length > 0 ? ( // Проверяем, есть ли курсы
           <S.CourseItems>
-            {courseCards.map((item, index) => {
-              const course = dataCourses[item.courseId]; // Получаем курс по его ID
+            {userCourses.map((course, index) => {
+              if (!course || !course._id) return null; // Пропускаем некорректные курсы
 
-              if (course && course.users) {
-                // Проверяем, существует ли курс и его свойство users
-                if (course.users.find((obj) => obj.userId === userId)) {
-                  return (
-                    <S.Item key={index}>
-                      <S.ItemImg src={item.img} alt={item.alt} />
-                      <S.ItemTitle>{item.title}</S.ItemTitle>
-                      <S.GreenButton
-                        onClick={() => handleClickGreenButton(item.block)}
-                      >
-                        Перейти
-                      </S.GreenButton>
-                    </S.Item>
-                  );
-                }
-              }
+              return (
+                <S.SectionTraining key={course._id}>
+                  {/* Кнопка для удаления курса */}
+                  <S.RemoveButton
+                    onClick={() => handleRemoveCourse(course._id)}
+                    $isAdded={true} // Устанавливаем, что курс уже добавлен
+                  >
+                    <S.AddedIcon src="/img/added-icon.svg" alt="Added" />
+                  </S.RemoveButton>
 
-              return null; // Если курс не найден, ничего не отображаем
+                  {/* Ссылка на страницу курса */}
+                  <Link to={`/courses/${course._id}`}>
+                    <S.ImgTraining
+                      src={`/img/card-course/card-${course.nameEN}.jpg`}
+                    />
+                    <S.TrainingContainer>
+                      <S.TitleTraining>{course.nameRU}</S.TitleTraining>
+                      <S.InfoItems>
+                        <S.InfoItem>
+                          <S.InfoIcon
+                            src="/img/calendar-icon.svg"
+                            alt="Calendar"
+                          />
+                          <S.InfoText>25 дней</S.InfoText>
+                        </S.InfoItem>
+                        <S.InfoItem>
+                          <S.InfoIcon src="/img/clock-icon.svg" alt="Clock" />
+                          <S.InfoText>20-50 мин/день</S.InfoText>
+                        </S.InfoItem>
+                        <S.InfoItem>
+                          <S.InfoIcon
+                            src="/img/difficulty-icon.svg"
+                            alt="Difficulty"
+                          />
+                          <S.InfoText>Сложность</S.InfoText>
+                        </S.InfoItem>
+                      </S.InfoItems>
+                    </S.TrainingContainer>
+                  </Link>
+                </S.SectionTraining>
+              );
             })}
           </S.CourseItems>
         ) : (
-          // тут должен быть скелетон
-          <h1>Загрузка...</h1>
+          // Если курсов нет, отображаем сообщение
+          <S.NoCoursesMessage>
+            Вы еще не записывались на курсы
+          </S.NoCoursesMessage>
         )}
       </S.CourseBlock>
+
+      {/* Ссылка на все курсы */}
       <Link to={"/"}>
         <S.viewAllCourses>Все курсы</S.viewAllCourses>
       </Link>

@@ -89,7 +89,8 @@ export default function AuthPage({ isLoginMode = false }) {
           setError("Слишком много попыток. Попробуйте позже.");
           break;
         default:
-          setError("Ошибка при авторизации: " + error.message);
+          // setError("Ошибка при авторизации: " + error.message);
+          setError("Введены неверные логин или пароль.");
           break;
       }
     } finally {
@@ -125,7 +126,8 @@ export default function AuthPage({ isLoginMode = false }) {
           setError("Пароль слишком слабый.");
           break;
         default:
-          setError("Ошибка при регистрации: " + error.message);
+          // setError("Ошибка при регистрации: " + error.message);
+          setError("Пользователь не зарегистрирован");
           break;
       }
     } finally {

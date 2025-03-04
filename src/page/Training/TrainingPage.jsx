@@ -4,6 +4,8 @@ import { TrainingSkillSkeleton } from "../../components/Skeletons/ТrainingSkill
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "../../hooks/use-auth";
 import PropTypes from "prop-types";
+import { useDispatch, useSelector } from "react-redux";
+import { addCourse } from "../../store/slices/userSlice"; // Импортируем action для добавления курса
 
 /**
  * Страница курса.
@@ -15,7 +17,9 @@ export const TrainingPage = ({ courses = {} }) => {
 
   const navigate = useNavigate();
   const param = useParams();
-  const { id: userId } = useAuth(); // Получаем ID пользователя из контекста
+  const { isAuth, id: userId } = useAuth(); // Получаем состояние авторизации и ID пользователя
+  const dispatch = useDispatch();
+  const userCourses = useSelector((state) => state.user.courses); // Получаем список курсов пользователя из Redux
 
   // Поиск текущего курса по ID
   const scills = useMemo(() => {
@@ -31,19 +35,30 @@ export const TrainingPage = ({ courses = {} }) => {
     }
   }, [scills]);
 
-  // Обработчик записи на курс
-  const handleClickRecord = useCallback(async () => {
+  // Проверка, добавлен ли курс пользователем
+  const isCourseAdded = useMemo(() => {
+    return userCourses?.some((course) => course._id === scills?._id);
+  }, [userCourses, scills]);
+
+  // Обработчик добавления курса
+  const handleAddCourse = useCallback(async () => {
     try {
-      if (!userId || !dataCourse?._id || !courses) {
-        throw new Error("Недостаточно данных для записи");
+      if (!isAuth) {
+        navigate("/login"); // Если пользователь не авторизован, перенаправляем на /login
+        return;
       }
 
-      // Логика записи на курс...
-      navigate("/profile", { replace: true });
+      if (!scills) {
+        throw new Error("Курс не найден");
+      }
+
+      // Добавляем курс в Redux
+      dispatch(addCourse(scills));
+      navigate("/profile"); // Перенаправляем на страницу профиля
     } catch (error) {
       setError(error.message);
     }
-  }, [userId, dataCourse, courses, navigate]);
+  }, [isAuth, scills, dispatch, navigate]);
 
   // Отображение ошибки
   if (error) {
@@ -58,8 +73,10 @@ export const TrainingPage = ({ courses = {} }) => {
   return (
     <div>
       <S.ScillCard>
-        <S.ScillImg src={`/img/training/skill card-${scills.nameEN}.jpg`} alt="scill" />
-        {/* <S.ScillTitle>{scills?.nameRU}</S.ScillTitle> */}
+        <S.ScillImg
+          src={`/img/training/skill card-${scills.nameEN}.jpg`}
+          alt="scill"
+        />
       </S.ScillCard>
 
       <S.ScillDescription>
@@ -68,7 +85,6 @@ export const TrainingPage = ({ courses = {} }) => {
         </S.ScillDescriptionTitle>
 
         <S.Description>
-        
           {scills?.towards?.map((item, index) => (
             <S.DescriptionTextOne key={index}>
               <S.Circle>{index + 1}</S.Circle>
@@ -93,24 +109,16 @@ export const TrainingPage = ({ courses = {} }) => {
         <S.TextDiscriptionYoga>{scills?.description}</S.TextDiscriptionYoga>
       </S.DiscriptionYoga>
 
-      {dataCourse?.users &&
-      !dataCourse.users.find((obj) => obj.userId === userId) ? (
-        <S.RecordBox>
-          <S.RecordText>
-            Оставьте заявку на пробное занятие, мы свяжемся с вами, поможем с
-            выбором направления и тренера, с которым тренировки принесут
-            здоровье и радость!
-          </S.RecordText>
-
-          <S.btnRecord onClick={handleClickRecord}>
-            Записаться на тренировку
-          </S.btnRecord>
-
-          <S.PhoneImg src="/img/phone.svg" alt="phone" />
-        </S.RecordBox>
-      ) : (
+      {isCourseAdded ? ( // Если курс уже добавлен
         <Link to={"/profile"}>
-          <S.goToProfile>перейти в профиль</S.goToProfile>
+          <S.goToProfile>Перейти в профиль</S.goToProfile>
+        </Link>
+      ) : isAuth ? ( // Если пользователь авторизован
+        <S.btnRecord onClick={handleAddCourse}>Добавить курс</S.btnRecord>
+      ) : (
+        // Если пользователь не авторизован
+        <Link to={"/login"}>
+          <S.btnRecord>Войдите, чтобы добавить курс</S.btnRecord>
         </Link>
       )}
     </div>

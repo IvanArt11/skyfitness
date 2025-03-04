@@ -13,6 +13,7 @@ export const Header = styled.div`
     padding-top: 15px;
   }
 `;
+
 export const HeaderLogo = styled(Link)`
   display: flex;
 `;
@@ -26,21 +27,26 @@ export const HeaderLogoImg = styled.img`
 
 export const HeaderSectionButton = styled.div``;
 
-export const HeaderButton = styled.button`
-  width: 77px;
-  height: 35px;
+export const HeaderButtonGreen = styled.button`
+  width: 103px;
+  height: 52px;
   border: none;
   border-radius: 46px;
-  padding: 7px 16px;
-  background-color: #140d40;
-  color: #fff;
+  padding: 16px 26px;
+  background-color: #bcec30; /* Зеленый цвет */
+  color: #000; /* Черный текст */
+  font-size: 18px;
+  weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
 
   &:hover {
-    background-color: #2d1f79;
+    background-color: #c6ff00; /* Светло-зеленый при наведении */
   }
 
   &:active {
-    background-color: #3b29a1;
+    background-color: #000000;
+    color: #ffffff;
   }
 `;
 
@@ -57,41 +63,53 @@ export const Personal = styled.div`
 export const PersonalMenu = styled.div`
   position: absolute;
   width: fit-content;
+  width: 256px;
   overflow: hidden;
   background: #fff;
-  border: 2px solid #000;
+  border: 0;
+  padding: 30px;
   top: 50px;
   right: 0;
 
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: center;
+  gap: 34px;
 
-  border-radius: 10px;
+  border-radius: 30px;
   z-index: 100;
 `;
+
+export const ButtonBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+`;
+
 export const PersonalMenuButton = styled.button`
   border: 0;
-  width: 100%;
-  padding: 10px;
-  background: none;
+  width: 206px;
   font-size: 18px;
+  background: #BCEC30;
+  border-radius: 46px;
+  padding: 16px 26px;
+
 
   &:hover {
-    background: #e5e5e5;
+    background-color: #c6ff00;
+  }
+  &:active {
+    color: #ffffff;
+    background-color: #000000;
+  }
+  &:disabled {
+    opacity: 0.5;
   }
 `;
 
 export const Name = styled.p`
   @media (max-width: 767px) {
-    display: none;
-  }
-`;
-
-export const NameLight = styled.p`
-  color: #000000;
-
-  @media (max-width: 768px) {
     display: none;
   }
 `;

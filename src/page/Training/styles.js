@@ -135,7 +135,7 @@ export const DescriptionText = styled.p`
   font-style: normal;
   font-weight: 600;
   line-height: 44px;
-  ${'' /* width: 244px; */}
+  ${"" /* width: 244px; */}
 
   @media (max-width: 767px) {
     width: 100%;
@@ -196,14 +196,14 @@ export const YogaDirection = styled.div`
 `;
 export const YogaText = styled.li`
   color: #000;
-  background: #BCEC30;
+  background: #bcec30;
   font-size: 24px;
   font-style: normal;
   font-weight: 400;
   line-height: 32px;
   list-style-type: none; /* Убираем стандартные маркеры списка */
   padding-left: 30px; /* Отступ для фонового изображения */
-  background-image: url('/img/Sparcle.svg');
+  background-image: url("/img/Sparcle.svg");
   background-repeat: no-repeat;
   background-position: left center;
   background-size: 26px 26px; /* Размер фонового изображения */
@@ -288,22 +288,30 @@ export const RecordText = styled.p`
   }
 `;
 export const btnRecord = styled.button`
-  width: fit-content;
+  width: 437px;
   border-radius: 46px;
-  background: #580ea2;
+  background-color: #bcec30;
   margin-top: 34px;
   border: 0;
-  padding: 12px 24px;
+  padding: 16px 0px;
 
-  color: #fff;
+  color: #000000;
   font-size: 18px;
   font-style: normal;
   font-weight: 400;
   line-height: 24px;
   letter-spacing: -0.05px;
+  transition: background-color 0.2s ease-in-out;
 
-  :hover {
-    background: #3f007d;
+  &:hover {
+    background-color: #c6ff00;
+  }
+  &:active {
+    color: #ffffff;
+    background-color: #000000;
+  }
+  &:disabled {
+    opacity: 0.5;
   }
 
   @media (max-width: 768px) {
@@ -329,24 +337,33 @@ export const Direct = styled.ul`
   list-style-position: inside;
   -webkit-column-count: 2;
   gap: 124px;
-  background: #BCEC30;
+  background: #bcec30;
 `;
 export const goToProfile = styled.button`
+  width: 437px;
   border-radius: 46px;
-  background: #580ea2;
+  background-color: #bcec30;
   margin-top: 34px;
   border: 0;
-  padding: 12px 24px;
+  padding: 16px 0px;
 
-  color: #fff;
+  color: #000000;
   font-size: 18px;
   font-style: normal;
   font-weight: 400;
   line-height: 24px;
   letter-spacing: -0.05px;
+  transition: background-color 0.2s ease-in-out;
 
-  :hover {
-    background: #3f007d;
+  &:hover {
+    background-color: #c6ff00;
+  }
+  &:active {
+    color: #ffffff;
+    background-color: #000000;
+  }
+  &:disabled {
+    opacity: 0.5;
   }
 
   @media (max-width: 768px) {

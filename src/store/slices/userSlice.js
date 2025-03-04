@@ -6,6 +6,7 @@ const initialState = {
   email: null,
   token: null,
   id: null,
+  courses: [], // Список курсов пользователя
 };
 
 const userSlice = createSlice({
@@ -32,10 +33,26 @@ const userSlice = createSlice({
     setNewPassword(state, action) {
       state.password = action.payload;
     },
+    addCourse: (state, action) => {
+      if (!state.courses.some((course) => course._id === action.payload._id)) {
+        state.courses.push(action.payload);
+      }
+    },
+    removeCourse: (state, action) => {
+      state.courses = state.courses.filter(
+        (course) => course._id !== action.payload
+      );
+    },
   },
 });
 
-export const { setUser, removeUser, setNewLogin, setNewPassword } =
-  userSlice.actions;
+export const {
+  setUser,
+  removeUser,
+  setNewLogin,
+  setNewPassword,
+  addCourse,
+  removeCourse,
+} = userSlice.actions;
 
 export default userSlice.reducer;
