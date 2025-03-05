@@ -20,12 +20,11 @@ export const ProfilePage = () => {
   const [openFormOldPassword, setOpenFormOldPassword] = React.useState(false);
   const [openEditPassword, setOpenEditPassword] = React.useState(false);
   const [openWorkoutSelection, setOpenWorkoutSelection] = React.useState(false);
-  const { email, login, password } = useAuth();
+  const { email, login, password, id: userId } = useAuth(); // Получаем userId из useAuth
   const [dataCourses, setDataCourses] = useState(null);
   const [currentCourseBlock, setCurrentCourseBlock] = useState(null);
-
   const dispatch = useDispatch();
-  const userCourses = useSelector((state) => state.user.courses); // Исправляем на state.user.courses
+  const userCourses = useSelector((state) => state.user.courses);
 
   // Функция для удаления курса
   const handleRemoveCourse = (courseId) => {
@@ -84,6 +83,22 @@ export const ProfilePage = () => {
             {userCourses.map((course, index) => {
               if (!course || !course._id) return null; // Пропускаем некорректные курсы
 
+              // Получаем прогресс пользователя для текущего курса
+              const userProgress = course.users?.find(
+                (user) => user.userId === userId // Используем userId из useAuth
+              )?.progress || [0];
+
+              const progressPercent = Math.round(
+                (userProgress[0] / course.exercises?.[0]?.times || 1) * 100
+              );
+
+              const buttonText =
+                progressPercent === 0
+                  ? "Начать тренировки"
+                  : progressPercent === 100
+                    ? "Начать тренировки"
+                    : "Продолжить";
+
               return (
                 <S.SectionTraining key={course._id}>
                   {/* Кнопка для удаления курса */}
@@ -121,6 +136,14 @@ export const ProfilePage = () => {
                           <S.InfoText>Сложность</S.InfoText>
                         </S.InfoItem>
                       </S.InfoItems>
+
+                      <S.ProgressBar>
+                        <S.ProgressBarFill $progress={progressPercent} />
+                      </S.ProgressBar>
+
+                      <S.ProgressButton to={`/training-video/${course._id}`}>
+                        {buttonText}
+                      </S.ProgressButton>
                     </S.TrainingContainer>
                   </Link>
                 </S.SectionTraining>

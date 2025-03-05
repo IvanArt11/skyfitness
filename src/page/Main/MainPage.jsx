@@ -5,7 +5,7 @@ import { TrainingBlockSkeleton } from "../../components/Skeletons/TrainingBlockS
 import * as S from "./styles";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
-import ErrorBoundary from "../../components/TrainingBlock/ErrorBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 // Константы для настройки
 const LOADING_TIME = 1100; // Время имитации загрузки

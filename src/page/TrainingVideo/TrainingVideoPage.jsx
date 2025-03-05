@@ -1,219 +1,168 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as S from "./styles";
 import { getWorkout } from "../../api";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/use-auth";
+import ErrorBoundary from "../../components/ErrorBoundary"; // Импортируем Error Boundary
 
-// чтобы прогресс бары были разными цветами
+// Массив цветов для прогресс-бара
 const colors = [
   "86, 94, 239",
   "255, 109, 0",
   "154, 72, 241",
   "101, 197, 5",
-  "210 16 225",
+  "210, 16, 225",
 ];
+
+// Компонент страницы тренировочного видео
 export const TrainingVideoPage = () => {
+  // Состояние формы прогресса
   const [progressForm, setProgressForm] = useState(false);
+
+  // Состояние данных страницы
   const [dataPage, setDataPage] = useState(null);
+  console.log("Данные тренировки:", dataPage);
+
+  // Состояние процента прогресса
   const [progressPercent, setProgressPercent] = useState(null);
 
+  // ID пользователя
   const userId = useAuth().id;
-  const currentPage = useParams().id;
+  console.log("userId:", userId);
 
-  useEffect(() => {
-    const fetchData = () => {
-      getWorkout()
-        .then((data) => {
-          setDataPage(data[currentPage]);
-        })
-        .catch((error) => {
-          console.error("Error fetching workout data:", error);
-        });
-    };
+  // ID текущей страницы
+  const currentPage = useParams()._id;
+  console.log("currentPage:", currentPage);
 
-    fetchData();
+  // Функция для загрузки данных
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await getWorkout();
+      console.log("Данные тренировки из API:", data); // Проверка данных
+
+      if (!data || !data.courses || !data.workouts) {
+        console.error("Ошибка загрузки данных: данные не найдены");
+        return;
+      }
+
+      // Получаем курс по currentPage
+      const course = data.courses?.[currentPage];
+      if (!course) {
+        console.error("Ошибка загрузки данных курса: курс не найден");
+        return;
+      }
+
+      // Получаем тренировки для курса
+      const workouts = course.workouts.map(
+        (workoutId) => data.workouts?.[workoutId]
+      );
+      if (!workouts.length) {
+        console.error(
+          "Ошибка загрузки данных тренировок: тренировки не найдены"
+        );
+        return;
+      }
+
+      // Устанавливаем первую тренировку как dataPage
+      setDataPage(workouts[0]);
+    } catch (error) {
+      console.error("Ошибка загрузки данных тренировки:", error);
+    }
   }, [currentPage]);
 
+  // Хук для загрузки данных при монтировании компонента
   useEffect(() => {
-    setProgressPercent(
-      dataPage?.users.find((obj) => obj.userId === userId)?.progress
-    );
-  }, [dataPage]);
+    fetchData();
+  }, [fetchData]);
 
+  // Хук для обновления процента прогресса при изменении данных страницы
+  useEffect(() => {
+    if (dataPage) {
+      console.log("Данные тренировки:", dataPage); // Проверка данных
+      const userProgress = dataPage.users?.find(
+        (obj) => obj.userId === userId
+      )?.progress;
+      console.log("Прогресс пользователя:", userProgress); // Проверка прогресса
+      setProgressPercent(userProgress);
+    }
+  }, [dataPage, userId]);
+
+  // Функция для открытия формы прогресса
   const handleClickFillProgress = () => {
+    // Блокировка скролла страницы
     document.body.style.overflow = "hidden";
+    // Открытие формы прогресса
     setProgressForm(true);
   };
 
-  function getYoutubeEmbedUrl(youtubeUrl) {
-    let videoId = youtubeUrl.slice(17, youtubeUrl.length);
-    const embedUrl = "https://www.youtube.com/embed/" + videoId;
-    return embedUrl;
+  // Функция для получения URL-адреса видео на YouTube
+  const getYoutubeEmbedUrl = (youtubeUrl) => {
+    if (!youtubeUrl) {
+      console.error("URL видео отсутствует");
+      return ""; // Возвращаем пустую строку или URL-заглушку
+    }
+
+    try {
+      const videoId = youtubeUrl.split("v=")[1].split("&")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } catch (error) {
+      console.error("Ошибка при обработке URL видео:", error);
+      return ""; // Возвращаем пустую строку или URL-заглушку
+    }
+  };
+
+  // Если данные страницы не загружены, отображение сообщения о загрузке
+  if (!dataPage) {
+    return <h1>Загрузка...</h1>;
   }
 
-  return dataPage ? (
-    <S.videoPage>
-      {progressForm && (
-        <ProgressForm
-          setProgressForm={setProgressForm}
-          dataPage={dataPage}
-          userId={userId}
-        />
-      )}
-      <S.videoPageTitle>{dataPage.title}</S.videoPageTitle>
-      <S.breadcrumbs>{dataPage.name}</S.breadcrumbs>
+  // Если данные загружены, но отсутствует видео или упражнения
+  if (!dataPage.video) {
+    return <p>Видео не найдено</p>;
+  }
 
-      <S.video src={getYoutubeEmbedUrl(dataPage.url)}></S.video>
+  if (!dataPage.exercises) {
+    return <p>Упражнения отсутствуют</p>;
+  }
 
-      {/* нет упражнений - нет прогресса */}
-      {dataPage.exercises && (
-        <S.exercise>
-          <S.exerciseWrap>
-            <S.exerciseText>Упражнения</S.exerciseText>
-            <S.exerciseLists>
-              {dataPage.exercises.map((item, index) => (
-                <S.exerciseItem
-                  key={index}
-                >{`${item.name} (${item.times} повторений)`}</S.exerciseItem>
-              ))}
-            </S.exerciseLists>
-            {progressPercent && (
-              <S.fillProgress onClick={handleClickFillProgress}>
-                Заполнить свой прогресс
-              </S.fillProgress>
-            )}
-          </S.exerciseWrap>
-
-          {progressPercent && (
-            <S.progressBar>
-              <S.progressBarText>
-                Мой прогресс по тренировке {dataPage.number}:
-              </S.progressBarText>
-              <S.progressBarStats>
-                {dataPage.exercises.map((item, index) => (
-                  <S.progressBarStat key={index}>
-                    <S.progressBarStatText>{item.name}</S.progressBarStatText>
-                    <S.progressBarStatPercent $rgbCode={colors[index]}>
-                      <S.progressBarStatPercentFill
-                        $percent={(progressPercent[index] * 100) / item.times}
-                        $rgbCode={colors[index]}
-                      >
-                        <S.progressBarStatPercentFillNumber
-                          $percent={(progressPercent[index] * 100) / item.times}
-                        >
-                          {`${Math.round(
-                            (progressPercent[index] * 100) / item.times
-                          )}%`}
-                        </S.progressBarStatPercentFillNumber>
-                      </S.progressBarStatPercentFill>
-                    </S.progressBarStatPercent>
-                  </S.progressBarStat>
-                ))}
-              </S.progressBarStats>
-            </S.progressBar>
-          )}
-        </S.exercise>
-      )}
-    </S.videoPage>
-  ) : (
-    // тут должен быть скелетон
-    <h1>Загрузка...</h1>
-  );
-};
-
-const ProgressForm = ({ setProgressForm, dataPage, userId }) => {
-  const [done, setDone] = useState(false);
-  const progressArray = [];
-
-  const closeForm = () => {
-    document.body.style.overflow = null;
-    setProgressForm(false);
-  };
-
-  // форма закроется, если кликнуть в любое пространство
-  const handleClickSpace = () => {
-    closeForm();
-  };
-
-  // чтобы не закрывалась, если кликнуть по форме
-  const handleClickForm = (event) => {
-    event.stopPropagation();
-  };
-
-  const handleChangeInput = (event, index) => {
-    progressArray[index] = event.target.value;
-  };
-
-  const handleClickSubmit = (event) => {
-    event.preventDefault();
-
-    const newArrayUsers = [...dataPage.users];
-    newArrayUsers.find((obj) => obj.userId === userId).progress = progressArray;
-
-    const patchData = {};
-    patchData[`workout/${dataPage.shortId}/users`] = newArrayUsers;
-
-    fetch(
-      "https://fitness-pro-6b7ae-default-rtdb.europe-west1.firebasedatabase.app/.json",
-      {
-        method: "PATCH",
-        body: JSON.stringify(patchData),
-      }
-    ).then((response) => {
-      if (!response.ok) {
-        throw new Error("Ошибка при обновлении данных на сервере");
-      }
-      console.log("Данные успешно обновлены на сервере");
-      setDone(true);
-      setTimeout(() => {
-        setDone(false);
-        closeForm();
-        window.location.reload();
-      }, 1500);
-    });
-  };
-  // без валидации
+  // Отображение страницы тренировочного видео
   return (
-    <S.progressFormWrap onClick={handleClickSpace}>
-      <S.progressForm onClick={(event) => handleClickForm(event)}>
-        {done ? (
-          <Done />
-        ) : (
-          <>
-            <S.progressFormText>Мой прогресс</S.progressFormText>
-
-            <S.progressFormInputs>
-              {dataPage.exercises.map((item, index) => (
-                <S.progressFormInputWrap key={index}>
-                  <S.progressFormInputText>
-                    {`Сколько раз вы сделали ${item.name.toLowerCase()}?`}
-                  </S.progressFormInputText>
-                  <S.progressFormInput
-                    onChange={(event) => handleChangeInput(event, index)}
-                    type="number"
-                    name="quantity"
-                    min="0"
-                    placeholder="Введите значение"
-                  />
-                </S.progressFormInputWrap>
-              ))}
-            </S.progressFormInputs>
-
-            <S.sendProgress onClick={(event) => handleClickSubmit(event)}>
-              Отправить
-            </S.sendProgress>
-          </>
+    <ErrorBoundary>
+      <S.videoPage>
+        {progressForm && (
+          // Форма прогресса
+          <S.progressForm
+            setProgressForm={setProgressForm}
+            dataPage={dataPage}
+            userId={userId}
+          />
         )}
-      </S.progressForm>
-    </S.progressFormWrap>
-  );
-};
-
-const Done = () => {
-  return (
-    <S.done>
-      <S.doneText>Ваш прогресс засчитан!</S.doneText>
-      <S.doneImg src="/img/VideoPage/done.png" alt="done" />
-    </S.done>
+        // Заголовок страницы
+        <S.videoPageTitle>{dataPage.name}</S.videoPageTitle>
+        // Видео
+        <S.video src={getYoutubeEmbedUrl(dataPage.video)}></S.video>
+        {/* нет упражнений - нет прогресса */}
+        {dataPage.exercises ? (
+          // Блок упражнений
+          <S.exercise>
+            <S.exerciseWrap>
+              // Заголовок упражнений
+              <S.exerciseText>Упражнения</S.exerciseText>
+              // Список упражнений
+              <S.exerciseLists>
+                {dataPage.exercises.map((item, index) => (
+                  // Элемент упражнения
+                  <S.exerciseItem key={index}>
+                    {`${item.name} (${item.quantity} повторений)`}
+                  </S.exerciseItem>
+                ))}
+              </S.exerciseLists>
+            </S.exerciseWrap>
+          </S.exercise>
+        ) : (
+          <p>Упражнения отсутствуют</p>
+        )}
+      </S.videoPage>
+    </ErrorBoundary>
   );
 };

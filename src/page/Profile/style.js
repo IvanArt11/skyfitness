@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
 export const Personal = styled.div`
   display: flex;
@@ -493,5 +494,44 @@ export const NoCoursesMessage = styled.div`
   }
   @media (max-width: 480px) {
     font-size: 16px;
+  }
+`;
+
+export const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  margin-top: 20px;
+`;
+
+export const ProgressBarFill = styled.div`
+  width: ${(props) => props.$progress}%;
+  height: 100%;
+  background-color: #bcec30;
+  border-radius: 4px;
+`;
+
+export const ProgressButton = styled(Link)`
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #bcec30;
+  color: #000;
+  text-align: center;
+  border-radius: 46px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    background-color: #c6ff00;
+  }
+
+  &:active {
+    background-color: #000;
+    color: #fff;
   }
 `;
