@@ -85,8 +85,8 @@ export const ScillDescriptionTitle = styled.h2`
 export const Description = styled.div`
   margin-top: 40px;
   display: flex;
-  flex-wrap: wrap;
-  column-gap: 10px;
+  flex-wrap: nowrap;
+  column-gap: 17px;
   row-gap: 40px;
   justify-content: space-between;
 
@@ -101,18 +101,14 @@ export const Circle = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #151720;
+  border-radius: 28px;
 
-  border-radius: 50%;
-  background: #c7e957;
-  display: flex;
-  width: 45.6px;
-  height: 45.6px;
-
-  color: #000;
-  font-size: 32px;
+  color: #bcec30;
+  font-size: 75px;
   font-style: normal;
-  font-weight: 400;
-  line-height: 40px;
+  font-weight: 500;
+  line-height: 135%;
 
   @media (max-width: 767px) {
     width: 35px;
@@ -130,11 +126,12 @@ export const Circle = styled.div`
   }
 `;
 export const DescriptionText = styled.p`
-  color: #000;
-  font-size: 40px;
+  color: #ffffff;
+  font-size: 24px;
   font-style: normal;
-  font-weight: 600;
-  line-height: 44px;
+  font-weight: 400;
+  line-height: 110.00000000000001%;
+  background-color: #151720;
   ${"" /* width: 244px; */}
 
   @media (max-width: 767px) {
@@ -152,6 +149,10 @@ export const DescriptionText = styled.p`
 export const DescriptionTextOne = styled.div`
   display: flex;
   gap: 24px;
+  background-color: #151720;
+  border-radius: 28px;
+  padding: 20px;
+  align-items: center;
 
   @media (max-width: 425px) {
     gap: 10px;
@@ -180,7 +181,7 @@ export const YogaDirection = styled.div`
   background-color: #bcec30;
   border-radius: 28px;
   padding: 30px;
-  height: 146px;
+  gap: 124px;
 
   @media (max-width: 768px) {
     width: calc(100% - 25px);
@@ -217,8 +218,49 @@ export const YogaText = styled.li`
     line-height: 20px;
   }
 `;
+
+export const DiscriptionConteiner = styled.div`
+  margin-top: 102px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background-color: #ffffff;
+  border-radius: 30px;
+  padding: 40px;
+
+  @media (max-width: 768px) {
+    margin-top: 35px;
+  }
+`;
+
+export const DiscriptionTitle = styled.h2`
+  color: #000000;
+  font-size: 60px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+  background-color: #ffffff;
+
+  @media (max-width: 767px) {
+    font-size: 32px;
+    line-height: 36px;
+  }
+  @media (max-width: 425px) {
+    font-size: 22px;
+    line-height: 26px;
+  }
+  @media (max-width: 375px) {
+    font-size: 18px;
+    line-height: 20px;
+  }
+`;
+
 export const DiscriptionYoga = styled.div`
-  margin-top: 75px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 437px;
+  background-color: #ffffff;
 
   @media (max-width: 425px) {
     margin-top: 35px;
@@ -231,6 +273,7 @@ export const TextDiscriptionYoga = styled.p`
   font-weight: 400;
   line-height: 32px;
   width: 100%;
+  background-color: #ffffff;
 
   @media (max-width: 768px) {
     font-size: 20px;
@@ -250,6 +293,14 @@ export const TextDiscriptionYoga = styled.p`
     line-height: 16px;
   }
 `;
+
+export const DiscriptionImg = styled.img`
+  ${"" /* width: 487px; */}
+  ${"" /* height: 542.49px; */}
+  rotate: -2.99deg;
+  background-color: #ffffff;
+`;
+
 export const RecordBox = styled.div`
   position: relative;
   margin-top: 75px;
@@ -335,7 +386,7 @@ export const PhoneImg = styled.img`
 `;
 export const Direct = styled.ul`
   list-style-position: inside;
-  -webkit-column-count: 2;
+  -webkit-column-count: 3;
   gap: 124px;
   background: #bcec30;
 `;

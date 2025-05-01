@@ -6,6 +6,7 @@ import {
   setNewLogin,
   setNewPassword,
   removeCourse,
+  setUserCourses,
 } from "../../store/slices/userSlice";
 import { useAuth } from "../../hooks/use-auth";
 import {
@@ -14,25 +15,157 @@ import {
   reauthenticateWithCredential,
   updatePassword,
 } from "firebase/auth";
+import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
+import { db } from "../../firebase";
 
 export const ProfilePage = () => {
-  const [openEditLogin, setOpenEditLogin] = React.useState(false);
-  const [openFormOldPassword, setOpenFormOldPassword] = React.useState(false);
-  const [openEditPassword, setOpenEditPassword] = React.useState(false);
-  const [openWorkoutSelection, setOpenWorkoutSelection] = React.useState(false);
-  const { email, login, password, id: userId } = useAuth(); // Получаем userId из useAuth
-  const [dataCourses, setDataCourses] = useState(null);
-  const [currentCourseBlock, setCurrentCourseBlock] = useState(null);
+  // Состояния для управления модальными окнами
+  const [openEditLogin, setOpenEditLogin] = useState(false);
+  const [openFormOldPassword, setOpenFormOldPassword] = useState(false);
+  const [openEditPassword, setOpenEditPassword] = useState(false);
+
+  // Состояние загрузки данных
+  const [loading, setLoading] = useState(true);
+
+  // Состояние для отслеживания оффлайн-режима
+  const [offlineMode, setOfflineMode] = useState(false);
+
+  // Состояние для хранения ошибок
+  const [error, setError] = useState(null);
+
+  // Получаем данные аутентифицированного пользователя
+  const { email, login, password, id: userId } = useAuth();
+
+  // Получаем функцию dispatch для работы с Redux store
   const dispatch = useDispatch();
-  const userCourses = useSelector((state) => state.user.courses);
+
+  // Получаем курсы и прогресс пользователя из Redux store
+  const { courses, progress } = useSelector((state) => state.user);
+
+  // Эффект для загрузки данных пользователя
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          throw new Error("Данные пользователя не найдены");
+        }
+
+        const userData = userSnap.data();
+
+        // Проверяем наличие обязательных полей
+        if (!userData.courses || !userData.progress) {
+          console.warn("Отсутствуют некоторые данные пользователя");
+        }
+
+        dispatch(
+          setUserCourses({
+            courses: userData.courses || [],
+            progress: userData.progress || {},
+          })
+        );
+        // setOfflineMode(false);
+      } catch (error) {
+        console.error("Firestore error:", error);
+
+        if (error.code === "permission-denied") {
+          setError("Нет доступа к данным. Войдите снова.");
+        } else if (error.code === "unavailable") {
+          setOfflineMode(true);
+          setError("Оффлайн-режим. Данные могут быть неактуальными.");
+        } else {
+          setError("Ошибка загрузки данных");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    // Обработчики изменения состояния сети
+    const handleNetworkChange = () => {
+      if (navigator.onLine) {
+        fetchUserData();
+      } else {
+        setOfflineMode(true);
+      }
+    };
+
+    window.addEventListener("online", handleNetworkChange);
+    window.addEventListener("offline", handleNetworkChange);
+
+    return () => {
+      window.removeEventListener("online", handleNetworkChange);
+      window.removeEventListener("offline", handleNetworkChange);
+    };
+  }, [userId, dispatch]);
 
   // Функция для удаления курса
-  const handleRemoveCourse = (courseId) => {
-    dispatch(removeCourse(courseId)); // Удаляем курс из списка
+  const handleRemoveCourse = async (courseId) => {
+    if (!userId) return;
+
+    try {
+      const userRef = doc(db, "users", userId);
+      const courseToRemove = courses.find((c) => c._id === courseId);
+
+      if (!courseToRemove) {
+        throw new Error("Курс не найден");
+      }
+
+      await updateDoc(userRef, {
+        courses: arrayRemove(courseToRemove),
+        [`progress.${courseId}`]: null,
+      });
+
+      dispatch(removeCourse(courseId));
+    } catch (error) {
+      console.error("Ошибка удаления курса:", error);
+      setError(
+        error.code === "unavailable"
+          ? "Изменения будут сохранены при восстановлении соединения"
+          : "Не удалось удалить курс"
+      );
+    }
   };
+
+  // Функция для получения прогресса по курсу
+  const getCourseProgress = (courseId) => {
+    if (!progress[courseId]) return 0;
+
+    const completed = progress[courseId].completedWorkouts?.length || 0;
+    const total =
+      courses.find((c) => c._id === courseId)?.workouts?.length || 1;
+
+    return Math.round((completed / total) * 100);
+  };
+
+  // Если данные загружаются
+  if (loading) {
+    return <S.Loading>Загрузка данных...</S.Loading>;
+  }
+
+  // Если произошла ошибка
+  if (error && !offlineMode) {
+    return <S.ErrorMessage>{error}</S.ErrorMessage>;
+  }
 
   return (
     <>
+      {/* Баннер оффлайн-режима */}
+      {offlineMode && (
+        <S.OfflineWarning>
+          ⚠️ Вы в оффлайн-режиме. Некоторые данные могут быть неактуальными.
+        </S.OfflineWarning>
+      )}
+
       {/* Модальные окна для редактирования логина и пароля */}
       {openEditLogin && <NewLoginForm setOpenEditLogin={setOpenEditLogin} />}
       {openFormOldPassword && (
@@ -44,23 +177,17 @@ export const ProfilePage = () => {
       {openEditPassword && (
         <NewPasswordForm setOpenEditPassword={setOpenEditPassword} />
       )}
-      {openWorkoutSelection && (
-        <WorkoutSelectionForm
-          currentCourseBlock={currentCourseBlock}
-          setOpenWorkoutSelection={setOpenWorkoutSelection}
-        />
-      )}
 
       {/* Блок профиля */}
       <S.ProfileBlock>
         <S.Title>Профиль</S.Title>
         <S.ProfileContainer>
-          <S.ProfileAvatarImg src="/img/avatar1.svg" alt="logo" />
+          <S.ProfileAvatarImg src="/img/avatar1.svg" alt="Аватар" />
           <S.InfoContainer>
             <S.InfoBlock>
-              <S.TextInfo>Логин: {login ? login : email}</S.TextInfo>
+              <S.TextInfo>Логин: {login || email}</S.TextInfo>
               <S.TextInfo>
-                Пароль: {password ? password : "●●●●●●●●"}
+                Пароль: {password ? "••••••••" : "●●●●●●●●"}
               </S.TextInfo>
             </S.InfoBlock>
             <S.ButtonBlock>
@@ -75,28 +202,20 @@ export const ProfilePage = () => {
         </S.ProfileContainer>
       </S.ProfileBlock>
 
-      {/* Блок "Мои курсы" */}
+      {/* Блок курсов */}
       <S.CourseBlock>
         <S.Title>Мои курсы</S.Title>
-        {userCourses && userCourses.length > 0 ? ( // Проверяем, есть ли курсы
+        {courses?.length > 0 ? ( // Проверяем, есть ли курсы
           <S.CourseItems>
-            {userCourses.map((course, index) => {
-              if (!course || !course._id) return null; // Пропускаем некорректные курсы
+            {courses.map((course) => {
+              if (!course?._id) return null; // Пропускаем некорректные курсы
 
-              // Получаем прогресс пользователя для текущего курса
-              const userProgress = course.users?.find(
-                (user) => user.userId === userId // Используем userId из useAuth
-              )?.progress || [0];
-
-              const progressPercent = Math.round(
-                (userProgress[0] / course.exercises?.[0]?.times || 1) * 100
-              );
-
+              const progressPercent = getCourseProgress(course._id);
               const buttonText =
                 progressPercent === 0
                   ? "Начать тренировки"
                   : progressPercent === 100
-                    ? "Начать тренировки"
+                    ? "Пройти заново"
                     : "Продолжить";
 
               return (
@@ -105,47 +224,49 @@ export const ProfilePage = () => {
                   <S.RemoveButton
                     onClick={() => handleRemoveCourse(course._id)}
                     $isAdded={true} // Устанавливаем, что курс уже добавлен
+                    title="Удалить курс"
                   >
-                    <S.AddedIcon src="/img/added-icon.svg" alt="Added" />
+                    <S.AddedIcon src="/img/added-icon.svg" alt="Удалить" />
                   </S.RemoveButton>
 
-                  {/* Ссылка на страницу курса */}
-                  <Link to={`/courses/${course._id}`}>
-                    <S.ImgTraining
-                      src={`/img/card-course/card-${course.nameEN}.jpg`}
-                    />
-                    <S.TrainingContainer>
-                      <S.TitleTraining>{course.nameRU}</S.TitleTraining>
-                      <S.InfoItems>
-                        <S.InfoItem>
-                          <S.InfoIcon
-                            src="/img/calendar-icon.svg"
-                            alt="Calendar"
-                          />
-                          <S.InfoText>25 дней</S.InfoText>
-                        </S.InfoItem>
-                        <S.InfoItem>
-                          <S.InfoIcon src="/img/clock-icon.svg" alt="Clock" />
-                          <S.InfoText>20-50 мин/день</S.InfoText>
-                        </S.InfoItem>
-                        <S.InfoItem>
-                          <S.InfoIcon
-                            src="/img/difficulty-icon.svg"
-                            alt="Difficulty"
-                          />
-                          <S.InfoText>Сложность</S.InfoText>
-                        </S.InfoItem>
-                      </S.InfoItems>
+                  <S.ImgTraining
+                    src={`/img/card-course/card-${course.nameEN}.jpg`}
+                    alt={course.nameRU}
+                  />
+                  <S.TrainingContainer>
+                    <S.TitleTraining>{course.nameRU}</S.TitleTraining>
+                    <S.InfoItems>
+                      <S.InfoItem>
+                        <S.InfoIcon
+                          src="/img/calendar-icon.svg"
+                          alt="Длительность"
+                        />
+                        <S.InfoText>25 дней</S.InfoText>
+                      </S.InfoItem>
+                      <S.InfoItem>
+                        <S.InfoIcon src="/img/clock-icon.svg" alt="Время" />
+                        <S.InfoText>20-50 мин/день</S.InfoText>
+                      </S.InfoItem>
+                      <S.InfoItem>
+                        <S.InfoIcon
+                          src="/img/difficulty-icon.svg"
+                          alt="Сложность"
+                        />
+                        <S.InfoText>Сложность</S.InfoText>
+                      </S.InfoItem>
+                    </S.InfoItems>
 
-                      <S.ProgressBar>
-                        <S.ProgressBarFill $progress={progressPercent} />
-                      </S.ProgressBar>
+                    <S.ProgressBar>
+                      <S.ProgressBarFill $progress={progressPercent} />
+                    </S.ProgressBar>
 
-                      <S.ProgressButton to={`/training-video/${course._id}`}>
-                        {buttonText}
-                      </S.ProgressButton>
-                    </S.TrainingContainer>
-                  </Link>
+                    <S.ProgressButton
+                      as={Link}
+                      to={`/training-video/${course._id}`}
+                    >
+                      {buttonText}
+                    </S.ProgressButton>
+                  </S.TrainingContainer>
                 </S.SectionTraining>
               );
             })}
@@ -166,13 +287,13 @@ export const ProfilePage = () => {
   );
 };
 
+// Компонент формы изменения логина
 const NewLoginForm = ({ setOpenEditLogin }) => {
   const dispatch = useDispatch();
   const { email, login } = useAuth();
-  const [newLog, setNewLog] = React.useState(login ? login : email);
+  const [newLog, setNewLog] = useState(login || email);
 
   const saveNewLogin = () => {
-    setNewLog(newLog);
     dispatch(setNewLogin(newLog));
     localStorage.setItem("login", JSON.stringify(newLog));
     setOpenEditLogin(false);
@@ -183,24 +304,16 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
     setOpenEditLogin(false);
   };
 
-  const handleClickSaveLogin = () => {
-    document.body.style.overflow = null;
-    saveNewLogin();
-  };
-
-  const handleClickBlackout = () => {
-    closeWindow();
-  };
-  const handleClickForm = (event) => {
-    event.stopPropagation();
-  };
-
   return (
-    <S.BlackoutWrapper onClick={handleClickBlackout}>
-      <S.PopupLogin onClick={(event) => handleClickForm(event)}>
-        <S.closeWindow src="/img/close.svg" onClick={closeWindow} />
+    <S.BlackoutWrapper onClick={closeWindow}>
+      <S.PopupLogin onClick={(e) => e.stopPropagation()}>
+        <S.closeWindow
+          src="/img/close.svg"
+          onClick={closeWindow}
+          alt="Закрыть"
+        />
         <S.LoginLogo>
-          <img width={220} height={35} src="img/logo-dark.svg" alt="logo" />
+          <img width={220} height={35} src="img/logo-dark.svg" alt="Логотип" />
         </S.LoginLogo>
         <S.Inputs>
           <S.TitleInput>Новый логин:</S.TitleInput>
@@ -211,7 +324,7 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
             onChange={(e) => setNewLog(e.target.value)}
           />
         </S.Inputs>
-        <S.Button disabled={!newLog.trim()} onClick={handleClickSaveLogin}>
+        <S.Button disabled={!newLog.trim()} onClick={saveNewLogin}>
           Сохранить
         </S.Button>
       </S.PopupLogin>
@@ -219,25 +332,23 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
   );
 };
 
+// Компонент формы старого пароля
 const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
-  const [oldPass, setOldPass] = React.useState("");
-  const [errorPassword, setErrorPassword] = React.useState(false);
+  const [oldPass, setOldPass] = useState("");
+  const [errorPassword, setErrorPassword] = useState(false);
 
-  const checkOldPassword = () => {
+  const checkOldPassword = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
-
     const credential = EmailAuthProvider.credential(user.email, oldPass);
 
-    reauthenticateWithCredential(user, credential)
-      .then(() => {
-        console.log("User re-authenticated.");
-        setOpenFormOldPassword(false);
-        setOpenEditPassword(true);
-      })
-      .catch((error) => {
-        setErrorPassword(true);
-      });
+    try {
+      await reauthenticateWithCredential(user, credential);
+      setOpenFormOldPassword(false);
+      setOpenEditPassword(true);
+    } catch (error) {
+      setErrorPassword(true);
+    }
   };
 
   const closeWindow = () => {
@@ -245,41 +356,28 @@ const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
     setOpenFormOldPassword(false);
   };
 
-  const handleClickBlackout = () => {
-    closeWindow();
-  };
-  const handleClickForm = (event) => {
-    event.stopPropagation();
-  };
-
   return (
-    <S.BlackoutWrapper onClick={handleClickBlackout}>
-      <S.PopupLogin onClick={(event) => handleClickForm(event)}>
-        <S.closeWindow src="/img/close.svg" onClick={closeWindow} />
+    <S.BlackoutWrapper onClick={closeWindow}>
+      <S.PopupLogin onClick={(e) => e.stopPropagation()}>
+        <S.closeWindow
+          src="/img/close.svg"
+          onClick={closeWindow}
+          alt="Закрыть"
+        />
         <S.LoginLogo>
-          <img width={220} height={35} src="img/logo-dark.svg" alt="logo" />
+          <img width={220} height={35} src="img/logo-dark.svg" alt="Логотип" />
         </S.LoginLogo>
         <S.Inputs>
           <S.TitleInput>Введите старый пароль:</S.TitleInput>
           <S.Input
-            type="text"
+            type="password"
             placeholder="Старый пароль"
             value={oldPass}
             onChange={(e) => setOldPass(e.target.value)}
           />
         </S.Inputs>
-        {errorPassword && (
-          <p
-            style={{
-              color: "tomato",
-              marginTop: "-20px",
-              marginBottom: "10px",
-            }}
-          >
-            Неверный пароль
-          </p>
-        )}
-        <S.Button disabled={!oldPass.trim()} onClick={() => checkOldPassword()}>
+        {errorPassword && <S.ErrorText>Неверный пароль</S.ErrorText>}
+        <S.Button disabled={!oldPass.trim()} onClick={checkOldPassword}>
           Далее
         </S.Button>
       </S.PopupLogin>
@@ -287,25 +385,23 @@ const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
   );
 };
 
+// Компонент формы нового пароля
 const NewPasswordForm = ({ setOpenEditPassword }) => {
   const dispatch = useDispatch();
-  const [newPass, setNewPass] = React.useState("");
-  const [repeatNewPass, setRepeatNewPass] = React.useState("");
+  const [newPass, setNewPass] = useState("");
+  const [repeatNewPass, setRepeatNewPass] = useState("");
 
-  const saveNewPassword = () => {
+  const saveNewPassword = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
 
-    updatePassword(user, newPass)
-      .then(() => {
-        document.body.style.overflow = null;
-        dispatch(setNewPassword(newPass));
-        setOpenEditPassword(false);
-        console.log("Пароль успешно изменен");
-      })
-      .catch((error) => {
-        console.log("Ошибка при смене пароля");
-      });
+    try {
+      await updatePassword(user, newPass);
+      dispatch(setNewPassword(newPass));
+      setOpenEditPassword(false);
+    } catch (error) {
+      console.error("Ошибка при смене пароля:", error);
+    }
   };
 
   const closeWindow = () => {
@@ -313,30 +409,27 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
     setOpenEditPassword(false);
   };
 
-  const handleClickBlackout = () => {
-    closeWindow();
-  };
-  const handleClickForm = (event) => {
-    event.stopPropagation();
-  };
-
   return (
-    <S.BlackoutWrapper onClick={handleClickBlackout}>
-      <S.PopupPassword onClick={(event) => handleClickForm(event)}>
-        <S.closeWindow src="/img/close.svg" onClick={closeWindow} />
+    <S.BlackoutWrapper onClick={closeWindow}>
+      <S.PopupPassword onClick={(e) => e.stopPropagation()}>
+        <S.closeWindow
+          src="/img/close.svg"
+          onClick={closeWindow}
+          alt="Закрыть"
+        />
         <S.LoginLogo>
-          <img width={220} height={35} src="img/logo-dark.svg" alt="logo" />
+          <img width={220} height={35} src="img/logo-dark.svg" alt="Логотип" />
         </S.LoginLogo>
         <S.Inputs>
           <S.TitleInput>Новый пароль:</S.TitleInput>
           <S.Input
-            type="text"
+            type="password"
             placeholder="Пароль"
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
           />
           <S.Input
-            type="text"
+            type="password"
             placeholder="Повторите пароль"
             value={repeatNewPass}
             onChange={(e) => setRepeatNewPass(e.target.value)}
@@ -346,54 +439,13 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
           <S.WarningMessage>Пароли не совпадают</S.WarningMessage>
         ) : (
           <S.Button
-            disabled={!newPass.trim() && !repeatNewPass.trim()}
-            onClick={() => saveNewPassword()}
+            disabled={!newPass.trim() || !repeatNewPass.trim()}
+            onClick={saveNewPassword}
           >
             Сохранить
           </S.Button>
         )}
       </S.PopupPassword>
-    </S.BlackoutWrapper>
-  );
-};
-
-const WorkoutSelectionForm = ({
-  setOpenWorkoutSelection,
-  currentCourseBlock,
-}) => {
-  const closeWindow = () => {
-    document.body.style.overflow = null;
-    setOpenWorkoutSelection(false);
-  };
-  const handleClickBlackout = () => {
-    closeWindow();
-  };
-  const handleClickForm = (event) => {
-    event.stopPropagation();
-  };
-  const handleClickLink = () => {
-    document.body.style.overflow = null;
-  };
-
-  return (
-    <S.BlackoutWrapper onClick={handleClickBlackout}>
-      <S.PopupWorkout onClick={(event) => handleClickForm(event)}>
-        <S.closeWindow src="/img/close.svg" onClick={closeWindow} />
-        <S.TitleWorkout>Выберите тренировку</S.TitleWorkout>
-        <S.ListWorkout>
-          {currentCourseBlock.map((item, index) => (
-            <Link
-              onClick={handleClickLink}
-              to={`/training-video/${item.shortId}`}
-              key={index}
-            >
-              <S.WorkoutItem>
-                <S.WorkoutName>{item.name}</S.WorkoutName>
-              </S.WorkoutItem>
-            </Link>
-          ))}
-        </S.ListWorkout>
-      </S.PopupWorkout>
     </S.BlackoutWrapper>
   );
 };

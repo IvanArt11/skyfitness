@@ -207,15 +207,18 @@ export const CourseBlock = styled.div`
   margin-top: 61px;
 `;
 
+// Адаптивные стили
 export const CourseItems = styled.div`
   display: flex;
   flex-wrap: wrap;
-  justify-content: start;
-  gap: 20px;
+  gap: 40px;
+  margin-top: 52px;
 
-  @media (max-width: 480px) {
-    gap: 20px;
+  @media (max-width: 1219px) {
     justify-content: center;
+  }
+  @media (max-width: 620px) {
+    margin-top: 30px;
   }
 `;
 
@@ -275,6 +278,7 @@ export const InfoItems = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   margin-top: 10px;
+  gap: 6px;
   background-color: #ffffff;
 `;
 
@@ -462,10 +466,10 @@ export const RemoveButton = styled.button`
   background: none;
   top: 20px;
   right: 20px;
-  border: none;
-  border-radius: 50%;
   width: 40px;
   height: 40px;
+  border: none;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -497,19 +501,22 @@ export const NoCoursesMessage = styled.div`
   }
 `;
 
+// Улучшаем стиль прогресс-бара
 export const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #f7f7f7;
+  background-color: #f0f0f0;
   border-radius: 4px;
-  margin-top: 20px;
+  margin: 20px 0;
+  overflow: hidden;
 `;
 
 export const ProgressBarFill = styled.div`
-  width: ${(props) => props.$progress}%;
   height: 100%;
   background-color: #bcec30;
   border-radius: 4px;
+  width: ${(props) => props.$progress}%;
+  transition: width 0.3s ease;
 `;
 
 export const ProgressButton = styled(Link)`
@@ -533,5 +540,54 @@ export const ProgressButton = styled(Link)`
   &:active {
     background-color: #000;
     color: #fff;
+  }
+`;
+
+// Стиль для состояния загрузки
+export const Loading = styled.div`
+  text-align: center;
+  font-size: 18px;
+  margin: 50px 0;
+  color: #666;
+`;
+
+// Стиль для текста ошибки
+export const ErrorText = styled.p`
+  color: tomato;
+  margin: -15px 0 15px;
+  font-size: 14px;
+`;
+
+export const ErrorMessage = styled.div`
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  border: 1px solid #ef9a9a;
+`;
+
+export const OfflineWarning = styled.div`
+  padding: 10px 20px;
+  background-color: #fff3e0;
+  color: #e65100;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:before {
+    content: "⚠️";
+    margin-right: 8px;
   }
 `;

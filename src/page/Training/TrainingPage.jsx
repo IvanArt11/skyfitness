@@ -85,7 +85,7 @@ export const TrainingPage = ({ courses = {} }) => {
         </S.ScillDescriptionTitle>
 
         <S.Description>
-          {scills?.towards?.map((item, index) => (
+          {scills?.fitting?.map((item, index) => (
             <S.DescriptionTextOne key={index}>
               <S.Circle>{index + 1}</S.Circle>
               <S.DescriptionText>{item}</S.DescriptionText>
@@ -95,7 +95,7 @@ export const TrainingPage = ({ courses = {} }) => {
       </S.ScillDescription>
 
       <S.DirectionConteiner>
-        <S.DescriptionText>Направления:</S.DescriptionText>
+        <S.ScillDescriptionTitle>Направления:</S.ScillDescriptionTitle>
         <S.YogaDirection>
           <S.Direct>
             {scills?.directions?.map((item, index) => (
@@ -105,11 +105,28 @@ export const TrainingPage = ({ courses = {} }) => {
         </S.YogaDirection>
       </S.DirectionConteiner>
 
-      <S.DiscriptionYoga>
-        <S.TextDiscriptionYoga>{scills?.description}</S.TextDiscriptionYoga>
-      </S.DiscriptionYoga>
+      <S.DiscriptionConteiner>
+        <S.DiscriptionYoga>
+          <S.DiscriptionTitle>Начните путь к новому телу</S.DiscriptionTitle>
+          <S.TextDiscriptionYoga>{scills?.description}</S.TextDiscriptionYoga>
 
-      {isCourseAdded ? ( // Если курс уже добавлен
+          {isCourseAdded ? ( // Если курс уже добавлен
+            <Link to={"/profile"}>
+              <S.goToProfile>Перейти в профиль</S.goToProfile>
+            </Link>
+          ) : isAuth ? ( // Если пользователь авторизован
+            <S.btnRecord onClick={handleAddCourse}>Добавить курс</S.btnRecord>
+          ) : (
+            // Если пользователь не авторизован
+            <Link to={"/login"}>
+              <S.btnRecord>Войдите, чтобы добавить курс</S.btnRecord>
+            </Link>
+          )}
+        </S.DiscriptionYoga>
+        <S.DiscriptionImg src={`/img/training/Mask group.svg`} alt="scill" />
+      </S.DiscriptionConteiner>
+
+      {/* {isCourseAdded ? ( // Если курс уже добавлен
         <Link to={"/profile"}>
           <S.goToProfile>Перейти в профиль</S.goToProfile>
         </Link>
@@ -120,7 +137,7 @@ export const TrainingPage = ({ courses = {} }) => {
         <Link to={"/login"}>
           <S.btnRecord>Войдите, чтобы добавить курс</S.btnRecord>
         </Link>
-      )}
+      )} */}
     </div>
   );
 };

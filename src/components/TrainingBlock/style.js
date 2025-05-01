@@ -58,6 +58,7 @@ export const InfoContainer = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   margin-top: 10px;
+  gap: 6px;
   background-color: #ffffff;
 `;
 
