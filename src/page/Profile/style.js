@@ -461,9 +461,27 @@ export const viewAllCourses = styled.button`
   }
 `;
 
+export const LoadingSpinner = styled.div`
+  width: 30px;
+  height: 30px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #bcec30;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
 export const RemoveButton = styled.button`
   position: absolute;
-  background: none;
+  background: ${(props) => (props.disabled ? "#f0f0f0" : "none")};
   top: 20px;
   right: 20px;
   width: 40px;
@@ -473,12 +491,12 @@ export const RemoveButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "wait" : "pointer")};
   z-index: 2;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: scale(1.1);
   }
 `;
@@ -501,13 +519,28 @@ export const NoCoursesMessage = styled.div`
   }
 `;
 
+export const ProgressHeader = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 20px 0px 10px 0px;
+  font-size: 18px;
+  gap: 6px;
+  color: #000000;
+  background-color: #ffffff;
+`;
+
+export const ProgressPercent = styled.span`
+  font-weight: 600;
+  color: #000;
+`;
+
 // Улучшаем стиль прогресс-бара
 export const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
   background-color: #f0f0f0;
   border-radius: 4px;
-  margin: 20px 0;
   overflow: hidden;
 `;
 
@@ -517,6 +550,13 @@ export const ProgressBarFill = styled.div`
   border-radius: 4px;
   width: ${(props) => props.$progress}%;
   transition: width 0.3s ease;
+`;
+
+export const ProgressText = styled.span`
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+  color: #000;
 `;
 
 export const ProgressButton = styled(Link)`

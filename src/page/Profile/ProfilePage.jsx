@@ -1,6 +1,10 @@
+/**
+ * Компонент страницы профиля пользователя
+ * Отображает информацию о пользователе, его курсы и позволяет редактировать данные
+ */
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import * as S from "./style";
+import * as S from "./style"; // Импорт стилей из styled-components
 import { useDispatch, useSelector } from "react-redux";
 import {
   setNewLogin,
@@ -8,15 +12,36 @@ import {
   removeCourse,
   setUserCourses,
 } from "../../store/slices/userSlice";
-import { useAuth } from "../../hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth"; // Кастомный хук для работы с авторизацией
 import {
   getAuth,
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
 } from "firebase/auth";
-import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
-import { db } from "../../firebase";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayRemove,
+  onSnapshot,
+  deleteField,
+} from "firebase/firestore";
+import { db } from "../../firebase"; // Инициализированный экземпляр Firestore
+import { enableIndexedDbPersistence } from "firebase/firestore";
+
+/**
+ * Включаем оффлайн-поддержку Firestore
+ * Это позволит приложению работать без интернета,
+ * используя локально сохраненные данные
+ */
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === "failed-precondition") {
+    console.warn("Оффлайн-режим недоступен при нескольких вкладках");
+  } else if (err.code === "unimplemented") {
+    console.warn("Браузер не поддерживает оффлайн-режим");
+  }
+});
 
 export const ProfilePage = () => {
   // Состояния для управления модальными окнами
@@ -27,13 +52,16 @@ export const ProfilePage = () => {
   // Состояние загрузки данных
   const [loading, setLoading] = useState(true);
 
+  // Новое состояние для отслеживания удаляемого курса
+  const [removingCourseId, setRemovingCourseId] = useState(null);
+
   // Состояние для отслеживания оффлайн-режима
   const [offlineMode, setOfflineMode] = useState(false);
 
   // Состояние для хранения ошибок
   const [error, setError] = useState(null);
 
-  // Получаем данные аутентифицированного пользователя
+  // Получаем данные аутентифицированного пользователя через кастомный хук
   const { email, login, password, id: userId } = useAuth();
 
   // Получаем функцию dispatch для работы с Redux store
@@ -42,89 +70,143 @@ export const ProfilePage = () => {
   // Получаем курсы и прогресс пользователя из Redux store
   const { courses, progress } = useSelector((state) => state.user);
 
-  // Эффект для загрузки данных пользователя
+  /**
+   * Эффект для загрузки данных пользователя при монтировании компонента
+   * и при изменении userId
+   */
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!userId) return;
+    if (!userId) return; // Если нет userId, выходим
 
+    let unsubscribe; // Функция для отписки от обновлений
+
+    /**
+     * Функция загрузки данных пользователя
+     */
+    const fetchUserData = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-          throw new Error("Данные пользователя не найдены");
-        }
-
-        const userData = userSnap.data();
-
-        // Проверяем наличие обязательных полей
-        if (!userData.courses || !userData.progress) {
-          console.warn("Отсутствуют некоторые данные пользователя");
-        }
-
-        dispatch(
-          setUserCourses({
-            courses: userData.courses || [],
-            progress: userData.progress || {},
-          })
+        // Подписываемся на изменения документа пользователя
+        unsubscribe = onSnapshot(
+          userRef,
+          // Обработчик успешного получения данных
+          (doc) => {
+            if (doc.exists()) {
+              const userData = doc.data();
+              // Обновляем данные в Redux store
+              dispatch(
+                setUserCourses({
+                  courses: userData.courses || [],
+                  progress: userData.progress || {},
+                })
+              );
+              // Сохраняем данные в localStorage для оффлайн-режима
+              localStorage.setItem(
+                `userData_${userId}`,
+                JSON.stringify(userData)
+              );
+              setOfflineMode(false);
+            }
+          },
+          // Обработчик ошибок подписки
+          (error) => {
+            console.error("Ошибка подписки:", error);
+            handleFirestoreError(error);
+          }
         );
-        // setOfflineMode(false);
       } catch (error) {
-        console.error("Firestore error:", error);
-
-        if (error.code === "permission-denied") {
-          setError("Нет доступа к данным. Войдите снова.");
-        } else if (error.code === "unavailable") {
-          setOfflineMode(true);
-          setError("Оффлайн-режим. Данные могут быть неактуальными.");
-        } else {
-          setError("Ошибка загрузки данных");
-        }
+        console.error("Ошибка загрузки:", error);
+        handleFirestoreError(error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
+    /**
+     * Функция обработки ошибок Firestore
+     * @param {Error} error - Объект ошибки
+     */
+    const handleFirestoreError = (error) => {
+      // Обработка ошибки отсутствия соединения
+      if (error.code === "unavailable" || error.message.includes("offline")) {
+        setOfflineMode(true);
+        // Пробуем загрузить данные из localStorage
+        const cachedData = localStorage.getItem(`userData_${userId}`);
+        if (cachedData) {
+          dispatch(setUserCourses(JSON.parse(cachedData)));
+          setError("Оффлайн-режим. Используются кэшированные данные.");
+        } else {
+          setError("Оффлайн-режим. Нет кэшированных данных.");
+        }
+      }
+      // Обработка ошибки доступа
+      else if (error.code === "permission-denied") {
+        setError("Нет доступа к данным. Войдите снова.");
+      }
+      // Обработка прочих ошибок
+      else {
+        setError("Ошибка загрузки данных");
+      }
+    };
 
-    // Обработчики изменения состояния сети
+    /**
+     * Функция обработки изменения состояния сети
+     */
     const handleNetworkChange = () => {
       if (navigator.onLine) {
+        // При восстановлении соединения пробуем обновить данные
         fetchUserData();
       } else {
         setOfflineMode(true);
       }
     };
 
+    // Первоначальная загрузка данных
+    fetchUserData();
+
+    // Добавляем обработчики изменения состояния сети
     window.addEventListener("online", handleNetworkChange);
     window.addEventListener("offline", handleNetworkChange);
 
+    // Функция очистки эффекта
     return () => {
+      // Отписываемся от обновлений Firestore
+      if (unsubscribe) unsubscribe();
+      // Удаляем обработчики событий сети
       window.removeEventListener("online", handleNetworkChange);
       window.removeEventListener("offline", handleNetworkChange);
     };
-  }, [userId, dispatch]);
+  }, [userId, dispatch]); // Зависимости эффекта
 
-  // Функция для удаления курса
+  /**
+   * Функция удаления курса
+   * @param {string} courseId - ID курса для удаления
+   */
   const handleRemoveCourse = async (courseId) => {
     if (!userId) return;
 
     try {
+      setRemovingCourseId(courseId); // Устанавливаем курс, который удаляем
+      setError(null);
+
       const userRef = doc(db, "users", userId);
+      // Находим курс для удаления
       const courseToRemove = courses.find((c) => c._id === courseId);
+
+      // Обновляем документ пользователя в Firestore
+      await updateDoc(userRef, {
+        courses: arrayRemove(courseToRemove), // Удаляем курс из массива
+        [`progress.${courseId}`]: deleteField(), // Полное удаление прогресса
+      });
 
       if (!courseToRemove) {
         throw new Error("Курс не найден");
       }
 
-      await updateDoc(userRef, {
-        courses: arrayRemove(courseToRemove),
-        [`progress.${courseId}`]: null,
-      });
-
+      // Обновляем состояние в Redux
       dispatch(removeCourse(courseId));
     } catch (error) {
       console.error("Ошибка удаления курса:", error);
@@ -133,30 +215,40 @@ export const ProfilePage = () => {
           ? "Изменения будут сохранены при восстановлении соединения"
           : "Не удалось удалить курс"
       );
+    } finally {
+      setRemovingCourseId(null); // Сбрасываем состояние загрузки
     }
   };
 
-  // Функция для получения прогресса по курсу
+  /**
+   * Функция расчета прогресса по курсу
+   * @param {string} courseId - ID курса
+   * @returns {number} Процент завершения курса (0-100)
+   */
   const getCourseProgress = (courseId) => {
     if (!progress[courseId]) return 0;
 
+    // Количество завершенных тренировок
     const completed = progress[courseId].completedWorkouts?.length || 0;
+    // Общее количество тренировок в курсе
     const total =
       courses.find((c) => c._id === courseId)?.workouts?.length || 1;
 
+    // Возвращаем процент завершения
     return Math.round((completed / total) * 100);
   };
 
-  // Если данные загружаются
+  // Отображаем загрузку, если данные еще не получены
   if (loading) {
     return <S.Loading>Загрузка данных...</S.Loading>;
   }
 
-  // Если произошла ошибка
+  // Отображаем ошибку, если она есть и мы не в оффлайн-режиме
   if (error && !offlineMode) {
     return <S.ErrorMessage>{error}</S.ErrorMessage>;
   }
 
+  // Основной рендер компонента
   return (
     <>
       {/* Баннер оффлайн-режима */}
@@ -166,7 +258,7 @@ export const ProfilePage = () => {
         </S.OfflineWarning>
       )}
 
-      {/* Модальные окна для редактирования логина и пароля */}
+      {/* Модальные окна для редактирования данных */}
       {openEditLogin && <NewLoginForm setOpenEditLogin={setOpenEditLogin} />}
       {openFormOldPassword && (
         <OldPasswordForm
@@ -178,7 +270,7 @@ export const ProfilePage = () => {
         <NewPasswordForm setOpenEditPassword={setOpenEditPassword} />
       )}
 
-      {/* Блок профиля */}
+      {/* Блок с информацией о профиле */}
       <S.ProfileBlock>
         <S.Title>Профиль</S.Title>
         <S.ProfileContainer>
@@ -202,15 +294,17 @@ export const ProfilePage = () => {
         </S.ProfileContainer>
       </S.ProfileBlock>
 
-      {/* Блок курсов */}
+      {/* Блок с курсами пользователя */}
       <S.CourseBlock>
         <S.Title>Мои курсы</S.Title>
-        {courses?.length > 0 ? ( // Проверяем, есть ли курсы
+        {courses?.length > 0 ? (
           <S.CourseItems>
             {courses.map((course) => {
-              if (!course?._id) return null; // Пропускаем некорректные курсы
+              if (!course?._id) return null; // Пропускаем курсы без ID
 
+              // Рассчитываем прогресс по курсу
               const progressPercent = getCourseProgress(course._id);
+              // Текст кнопки в зависимости от прогресса
               const buttonText =
                 progressPercent === 0
                   ? "Начать тренировки"
@@ -220,19 +314,27 @@ export const ProfilePage = () => {
 
               return (
                 <S.SectionTraining key={course._id}>
-                  {/* Кнопка для удаления курса */}
+                  {/* Кнопка удаления курса */}
                   <S.RemoveButton
                     onClick={() => handleRemoveCourse(course._id)}
-                    $isAdded={true} // Устанавливаем, что курс уже добавлен
+                    $isAdded={true}
                     title="Удалить курс"
+                    disabled={removingCourseId === course._id} // Блокируем кнопку при удалении
                   >
-                    <S.AddedIcon src="/img/added-icon.svg" alt="Удалить" />
+                    {removingCourseId === course._id ? (
+                      <S.LoadingSpinner /> // Показываем индикатор загрузки
+                    ) : (
+                      <S.AddedIcon src="/img/added-icon.svg" alt="Удалить" />
+                    )}
                   </S.RemoveButton>
 
+                  {/* Изображение курса */}
                   <S.ImgTraining
                     src={`/img/card-course/card-${course.nameEN}.jpg`}
                     alt={course.nameRU}
                   />
+
+                  {/* Информация о курсе */}
                   <S.TrainingContainer>
                     <S.TitleTraining>{course.nameRU}</S.TitleTraining>
                     <S.InfoItems>
@@ -256,10 +358,26 @@ export const ProfilePage = () => {
                       </S.InfoItem>
                     </S.InfoItems>
 
-                    <S.ProgressBar>
-                      <S.ProgressBarFill $progress={progressPercent} />
-                    </S.ProgressBar>
+                    {/* Прогресс-бар */}
+                    <div>
+                      <S.ProgressHeader>
+                        <span>Прогресс</span>
+                        <S.ProgressPercent>
+                          {progressPercent}%
+                        </S.ProgressPercent>
+                      </S.ProgressHeader>
+                      <S.ProgressBar>
+                        <S.ProgressBarFill $progress={progressPercent} />
+                      </S.ProgressBar>
+                    </div>
 
+                    {/* <S.ProgressBar>
+                      Прогресс
+                      <S.ProgressBarFill $progress={progressPercent} />
+                      <S.ProgressText>{progressPercent}%</S.ProgressText>
+                    </S.ProgressBar> */}
+
+                    {/* Кнопка перехода к тренировкам */}
                     <S.ProgressButton
                       as={Link}
                       to={`/training-video/${course._id}`}
@@ -272,35 +390,46 @@ export const ProfilePage = () => {
             })}
           </S.CourseItems>
         ) : (
-          // Если курсов нет, отображаем сообщение
+          // Сообщение, если у пользователя нет курсов
           <S.NoCoursesMessage>
             Вы еще не записывались на курсы
           </S.NoCoursesMessage>
         )}
       </S.CourseBlock>
 
-      {/* Ссылка на все курсы */}
-      <Link to={"/"}>
+      {/* Ссылка на страницу со всеми курсами */}
+      <S.viewAllCourses as={Link} to={"/"}>
+        Все курсы
+      </S.viewAllCourses>
+      {/* <Link to={"/"}>
         <S.viewAllCourses>Все курсы</S.viewAllCourses>
-      </Link>
+      </Link> */}
     </>
   );
 };
 
-// Компонент формы изменения логина
+/**
+ * Компонент формы для изменения логина
+ */
 const NewLoginForm = ({ setOpenEditLogin }) => {
   const dispatch = useDispatch();
   const { email, login } = useAuth();
   const [newLog, setNewLog] = useState(login || email);
 
+  /**
+   * Функция сохранения нового логина
+   */
   const saveNewLogin = () => {
-    dispatch(setNewLogin(newLog));
-    localStorage.setItem("login", JSON.stringify(newLog));
-    setOpenEditLogin(false);
+    dispatch(setNewLogin(newLog)); // Обновляем в Redux
+    localStorage.setItem("login", JSON.stringify(newLog)); // Сохраняем в localStorage
+    setOpenEditLogin(false); // Закрываем модальное окно
   };
 
+  /**
+   * Функция закрытия модального окна
+   */
   const closeWindow = () => {
-    document.body.style.overflow = null;
+    document.body.style.overflow = null; // Восстанавливаем прокрутку страницы
     setOpenEditLogin(false);
   };
 
@@ -332,25 +461,35 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
   );
 };
 
-// Компонент формы старого пароля
+/**
+ * Компонент формы для ввода старого пароля
+ */
 const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
   const [oldPass, setOldPass] = useState("");
   const [errorPassword, setErrorPassword] = useState(false);
 
+  /**
+   * Функция проверки старого пароля
+   */
   const checkOldPassword = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
+    // Создаем credentials для аутентификации
     const credential = EmailAuthProvider.credential(user.email, oldPass);
 
     try {
+      // Пробуем переаутентифицировать пользователя
       await reauthenticateWithCredential(user, credential);
       setOpenFormOldPassword(false);
-      setOpenEditPassword(true);
+      setOpenEditPassword(true); // Открываем форму нового пароля
     } catch (error) {
-      setErrorPassword(true);
+      setErrorPassword(true); // Показываем ошибку, если пароль неверный
     }
   };
 
+  /**
+   * Функция закрытия модального окна
+   */
   const closeWindow = () => {
     document.body.style.overflow = null;
     setOpenFormOldPassword(false);
@@ -385,25 +524,34 @@ const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
   );
 };
 
-// Компонент формы нового пароля
+/**
+ * Компонент формы для ввода нового пароля
+ */
 const NewPasswordForm = ({ setOpenEditPassword }) => {
   const dispatch = useDispatch();
   const [newPass, setNewPass] = useState("");
   const [repeatNewPass, setRepeatNewPass] = useState("");
 
+  /**
+   * Функция сохранения нового пароля
+   */
   const saveNewPassword = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
 
     try {
+      // Обновляем пароль в Firebase Auth
       await updatePassword(user, newPass);
-      dispatch(setNewPassword(newPass));
-      setOpenEditPassword(false);
+      dispatch(setNewPassword(newPass)); // Обновляем в Redux
+      setOpenEditPassword(false); // Закрываем модальное окно
     } catch (error) {
       console.error("Ошибка при смене пароля:", error);
     }
   };
 
+  /**
+   * Функция закрытия модального окна
+   */
   const closeWindow = () => {
     document.body.style.overflow = null;
     setOpenEditPassword(false);
