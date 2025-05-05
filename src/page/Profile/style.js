@@ -531,8 +531,9 @@ export const ProgressHeader = styled.div`
 `;
 
 export const ProgressPercent = styled.span`
-  font-weight: 600;
-  color: #000;
+  font-weight: 400;
+  font-size: 18px;
+  color: #000000;
 `;
 
 // Улучшаем стиль прогресс-бара

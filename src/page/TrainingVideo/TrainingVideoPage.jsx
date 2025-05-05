@@ -1,141 +1,188 @@
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import PropTypes from "prop-types";
 import * as S from "./styles";
 import { getWorkout } from "../../api";
-import { useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/use-auth";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { WorkoutCompletion } from "../../services/WorkoutCompletion";
-import { useDispatch } from "react-redux";
+import { LoadingSpinner } from "../../components/LoadingSpinner/LoadingSpinner"; // Добавляем компонент загрузки
+import { ErrorMessage } from "../../components/ErrorMessage/ErrorMessage"; // Добавляем компонент ошибки
+import { ProgressForm } from "./ProgressForm";
 
-// Компонент страницы тренировочного видео
+// Константы выносим в отдельный объект
+const PROGRESS_BAR_COLORS = [
+  "86, 94, 239",
+  "255, 109, 0",
+  "154, 72, 241",
+  "101, 197, 5",
+  "210, 16, 225",
+];
+
+// Выносим вспомогательные функции в отдельный файл утилит
+const getYoutubeEmbedUrl = (youtubeUrl) => {
+  if (!youtubeUrl) {
+    console.error("URL видео отсутствует");
+    return "";
+  }
+
+  try {
+    const url = new URL(youtubeUrl);
+    const videoId = url.searchParams.get("v");
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+  } catch (error) {
+    console.error("Ошибка при обработке URL видео:", error);
+    return "";
+  }
+};
+
 export const TrainingVideoPage = () => {
-  // Состояние данных страницы
-  const [dataPage, setDataPage] = useState(null);
-  console.log("Данные тренировки:", dataPage);
-  // Состояние процента прогресса
-  const [progressPercent, setProgressPercent] = useState(null);
+  const [isProgressFormOpen, setIsProgressFormOpen] = useState(false);
+  const [workoutData, setWorkoutData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [progressPercent, setProgressPercent] = useState(0);
 
-  const params = useParams();
-  // ID пользователя
   const { id: userId } = useAuth();
-  console.log("userId:", userId);
-  const dispatch = useDispatch();
+  const { _id: courseId } = useParams();
 
-  const courseId = params.courseId;
-  const workoutId = params.workoutId || params._id;
+  const fetchWorkoutData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  // Функция для загрузки данных
-  const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await getWorkout();
-      console.log("Данные тренировки из API:", data); // Проверка данных
 
-      // Проверяем структуру данных
-      if (!data || !Array.isArray(data.courses)) {
-        throw new Error("Неверный формат данных");
+      if (!data?.courses || !data?.workouts) {
+        throw new Error("Неверный формат данных тренировки");
       }
 
-      // Получаем курс
-      const course = data.courses.find((c) => c._id === courseId);
+      const course = data.courses[courseId];
       if (!course) {
-        throw new Error("Курс не найден");
+        throw new Error(`Курс с ID ${courseId} не найден`);
       }
 
-      // Получаем тренировки для курса
-      const workout = course.workouts?.find((w) => w._id === workoutId);
-      if (!workout) {
-        throw new Error("Тренировка не найдена");
+      const workouts = course.workouts
+        .map((workoutId) => data.workouts[workoutId])
+        .filter(Boolean);
+
+      if (workouts.length === 0) {
+        throw new Error("Тренировки не найдены");
       }
 
-      setDataPage({ ...workout, courseName: course.name });
-      setError(null);
+      setWorkoutData(workouts[0]);
     } catch (err) {
-      console.error("Ошибка загрузки:", err);
-      setError(err.message);
+      console.error("Ошибка загрузки данных:", err);
+      setError({
+        message: err.message,
+        type: err.name === "TypeError" ? "network" : "application",
+      });
     } finally {
       setLoading(false);
     }
-  }, [courseId, workoutId]);
+  }, [courseId]);
 
-  // Хук для загрузки данных при монтировании компонента
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchWorkoutData();
+  }, [fetchWorkoutData]);
 
-  // Хук для обновления процента прогресса при изменении данных страницы
   useEffect(() => {
-    if (dataPage && userId) {
-      console.log("Данные тренировки:", dataPage); // Проверка данных
-      const userProgress = dataPage.users?.find(
-        (u) => u.userId === userId
-      )?.progress;
-      console.log("Прогресс пользователя:", userProgress); // Проверка прогресса
-      setProgressPercent(userProgress || []);
+    if (workoutData?.users) {
+      const userProgress =
+        workoutData.users.find((user) => user.userId === userId)?.progress || 0;
+      setProgressPercent(userProgress);
     }
-  }, [dataPage, userId]);
+  }, [workoutData, userId]);
 
-  const handleWorkoutComplete = () => {
-    setProgressPercent((prev) => [...(prev || []), 100]);
+  const handleOpenProgressForm = () => {
+    document.body.style.overflow = "hidden";
+    setIsProgressFormOpen(true);
   };
 
-  // Функция для получения URL-адреса видео на YouTube
-  const getYoutubeEmbedUrl = (url) => {
-    if (!url) return ""; // Возвращаем пустую строку или URL-заглушку
-    try {
-      const videoId = url.split("v=")[1].split("&")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    } catch {
-      return ""; // Возвращаем пустую строку или URL-заглушку
-    }
+  const handleCloseProgressForm = () => {
+    document.body.style.overflow = "auto";
+    setIsProgressFormOpen(false);
+    // Можно добавить обновление данных после закрытия формы
+    fetchWorkoutData();
   };
 
-  // Если данные страницы не загружены, отображение сообщения о загрузке
-  if (loading) return <S.Loading>Загрузка...</S.Loading>;
-  if (error) return <S.ErrorText>{error}</S.ErrorText>;
-  if (!dataPage) return <S.ErrorText>Данные не загружены</S.ErrorText>;
+  if (loading) {
+    return <LoadingSpinner aria-label="Загрузка данных тренировки" />;
+  }
 
-  // Отображение страницы тренировочного видео
+  if (error) {
+    return (
+      <ErrorMessage
+        message={error.message}
+        errorType={error.type}
+        onRetry={fetchWorkoutData}
+      />
+    );
+  }
+
+  if (!workoutData) {
+    return <ErrorMessage message="Данные тренировки не найдены" />;
+  }
+
+  const { name, video, exercises } = workoutData;
+  const embedUrl = getYoutubeEmbedUrl(video);
+
   return (
     <ErrorBoundary>
-      <S.videoPage>
-        <S.videoPageTitle>{dataPage.name}</S.videoPageTitle>
-        // Видео
-        <S.video
-          src={getYoutubeEmbedUrl(dataPage.video)}
-          title="Видео тренировки"
-          allowFullScreen
-        />
-        {/* нет упражнений - нет прогресса */}
-        {dataPage.exercises?.length > 0 ? (
-          // Блок упражнений
-          <S.exercise>
-            <S.exerciseWrap>
-              // Заголовок упражнений
-              <S.exerciseText>Упражнения</S.exerciseText>
-              // Список упражнений
-              <S.exerciseLists>
-                {dataPage.exercises.map((item, index) => (
-                  // Элемент упражнения
-                  <S.exerciseItem key={index}>
-                    {`${item.name} (${item.quantity} повторений)`}
-                  </S.exerciseItem>
-                ))}
-              </S.exerciseLists>
-            </S.exerciseWrap>
-          </S.exercise>
-        ) : (
-          <S.InfoText>Нет данных об упражнениях</S.InfoText>
+      <S.VideoPage>
+        {isProgressFormOpen && (
+          <S.ProgressForm
+            onClose={handleCloseProgressForm}
+            workoutData={workoutData}
+            userId={userId}
+            progressColors={PROGRESS_BAR_COLORS}
+            currentProgress={progressPercent}
+          />
         )}
-        <WorkoutCompletion
-          courseId={courseId}
-          workoutId={workoutId}
-          onComplete={handleWorkoutComplete}
-          isCompleted={progressPercent?.includes(100)}
-        />
-      </S.videoPage>
+
+        <S.VideoPageTitle>{name}</S.VideoPageTitle>
+
+        {embedUrl ? (
+          <S.VideoContainer>
+            <S.Video
+              src={embedUrl}
+              title={`Видео тренировки: ${name}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              aria-label="Видео тренировки"
+            />
+          </S.VideoContainer>
+        ) : (
+          <ErrorMessage message="Не удалось загрузить видео" />
+        )}
+
+        {exercises?.length > 0 ? (
+          <S.ExerciseSection>
+            <S.ExerciseWrapper>
+              <S.ExerciseTitle>Упражнения</S.ExerciseTitle>
+              <S.ExerciseList>
+                {exercises.map(({ name, quantity }, index) => (
+                  <S.ExerciseItem
+                    key={`${name}-${index}`}
+                    aria-label={`Упражнение: ${name}, ${quantity} повторений`}
+                  >
+                    {`${name} (${quantity} повторений)`}
+                  </S.ExerciseItem>
+                ))}
+              </S.ExerciseList>
+            </S.ExerciseWrapper>
+          </S.ExerciseSection>
+        ) : (
+          <S.NoExercisesMessage>Упражнения отсутствуют</S.NoExercisesMessage>
+        )}
+
+        <S.ProgressButton onClick={handleOpenProgressForm}>
+          Заполнить свой прогресс
+        </S.ProgressButton>
+      </S.VideoPage>
     </ErrorBoundary>
   );
+};
+
+TrainingVideoPage.propTypes = {
+  // Добавить PropTypes при необходимости
 };

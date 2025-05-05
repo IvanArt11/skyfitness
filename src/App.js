@@ -6,12 +6,15 @@ import { useEffect, useState } from "react";
 import { getCourses } from "./api";
 import { LoadingSpinner } from "./components/LoadingSpinner/LoadingSpinner";
 import { FirebaseProvider } from "./FirebaseContext";
+import { ThemeProvider } from "styled-components";
+import { lightTheme, darkTheme } from "./style/theme";
 
 function App() {
   const dispatch = useDispatch();
   const [courses, setCourses] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState(lightTheme);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -59,12 +62,14 @@ function App() {
 
   return (
     <>
-      <FirebaseProvider>
-        <div className="App">
-          <S.StyLeGlobal />
-          <AppRoutes courses={courses} />
-        </div>
-      </FirebaseProvider>
+      <ThemeProvider theme={theme}>
+        <FirebaseProvider>
+          <div className="App">
+            <S.StyLeGlobal />
+            <AppRoutes courses={courses} />
+          </div>
+        </FirebaseProvider>
+      </ThemeProvider>
     </>
   );
 }

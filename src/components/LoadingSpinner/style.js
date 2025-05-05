@@ -28,5 +28,5 @@ export const Spinner = styled.div`
 
 export const LoadingText = styled.p`
   margin-top: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.textPrimary};
 `;
