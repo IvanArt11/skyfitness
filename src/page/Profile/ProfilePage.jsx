@@ -3,8 +3,8 @@
  * Отображает информацию о пользователе, его курсы и позволяет редактировать данные
  */
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import * as S from "./style"; // Импорт стилей из styled-components
+import { Link, useNavigate } from "react-router-dom";
+import * as S from "./style";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setNewLogin,
@@ -12,7 +12,7 @@ import {
   removeCourse,
   setUserCourses,
 } from "../../store/slices/userSlice";
-import { useAuth } from "../../hooks/use-auth"; // Кастомный хук для работы с авторизацией
+import { useAuth } from "../../hooks/use-auth";
 import {
   getAuth,
   EmailAuthProvider,
@@ -26,15 +26,13 @@ import {
   arrayRemove,
   onSnapshot,
   deleteField,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../../firebase"; // Инициализированный экземпляр Firestore
 import { enableIndexedDbPersistence } from "firebase/firestore";
+import { WorkoutSelectionModal } from "../../components/WorkoutSelectionModal/WorkoutSelectionModal";
 
-/**
- * Включаем оффлайн-поддержку Firestore
- * Это позволит приложению работать без интернета,
- * используя локально сохраненные данные
- */
+// Включаем оффлайн-поддержку Firestore с обработкой возможных ошибок
 enableIndexedDbPersistence(db).catch((err) => {
   if (err.code === "failed-precondition") {
     console.warn("Оффлайн-режим недоступен при нескольких вкладках");
@@ -44,43 +42,76 @@ enableIndexedDbPersistence(db).catch((err) => {
 });
 
 export const ProfilePage = () => {
+  const navigate = useNavigate();
+  // Получаем функцию dispatch для работы с Redux store
+  const dispatch = useDispatch();
+
   // Состояния для управления модальными окнами
   const [openEditLogin, setOpenEditLogin] = useState(false);
   const [openFormOldPassword, setOpenFormOldPassword] = useState(false);
   const [openEditPassword, setOpenEditPassword] = useState(false);
-
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showWorkoutSelection, setShowWorkoutSelection] = useState(false);
   // Состояние загрузки данных
   const [loading, setLoading] = useState(true);
-
   // Новое состояние для отслеживания удаляемого курса
   const [removingCourseId, setRemovingCourseId] = useState(null);
-
   // Состояние для отслеживания оффлайн-режима
   const [offlineMode, setOfflineMode] = useState(false);
-
   // Состояние для хранения ошибок
   const [error, setError] = useState(null);
 
   // Получаем данные аутентифицированного пользователя через кастомный хук
   const { email, login, password, id: userId } = useAuth();
-
-  // Получаем функцию dispatch для работы с Redux store
-  const dispatch = useDispatch();
-
   // Получаем курсы и прогресс пользователя из Redux store
   const { courses, progress } = useSelector((state) => state.user);
 
   /**
-   * Эффект для загрузки данных пользователя при монтировании компонента
-   * и при изменении userId
+   * Обработчик открытия модального окна выбора тренировки
+   * @param {Object} course - Объект курса
    */
+  const handleWorkoutButtonClick = (course) => {
+    setSelectedCourse(course);
+    setShowWorkoutSelection(true);
+  };
+
+  /**
+   * Закрытие модального окна выбора тренировки
+   */
+  const handleCloseWorkoutModal = () => {
+    setShowWorkoutSelection(false);
+  };
+
+  /**
+   * Обработчик выбора конкретной тренировки
+   * @param {Object} workout - Выбранная тренировка
+   */
+  const handleWorkoutSelect = (workout) => {
+    if (!workout?._id || !selectedCourse?._id) {
+      console.error("Недостаточно данных для перехода:", {
+        workout,
+        selectedCourse,
+      });
+      return;
+    }
+
+    console.log("Переход на тренировку:", {
+      courseId: selectedCourse._id,
+      workoutId: workout._id,
+    });
+
+    navigate(`/training-video/${selectedCourse._id}/${workout._id}`);
+    setShowWorkoutSelection(false);
+  };
+
+  // Эффект для загрузки и отслеживания данных пользователя
   useEffect(() => {
     if (!userId) return; // Если нет userId, выходим
 
     let unsubscribe; // Функция для отписки от обновлений
 
     /**
-     * Функция загрузки данных пользователя
+     * Загрузка данных пользователя из Firestore
      */
     const fetchUserData = async () => {
       try {
@@ -103,7 +134,7 @@ export const ProfilePage = () => {
                   progress: userData.progress || {},
                 })
               );
-              // Сохраняем данные в localStorage для оффлайн-режима
+              // Кэшируем данные для оффлайн-режима
               localStorage.setItem(
                 `userData_${userId}`,
                 JSON.stringify(userData)
@@ -112,13 +143,9 @@ export const ProfilePage = () => {
             }
           },
           // Обработчик ошибок подписки
-          (error) => {
-            console.error("Ошибка подписки:", error);
-            handleFirestoreError(error);
-          }
+          (error) => handleFirestoreError(error)
         );
       } catch (error) {
-        console.error("Ошибка загрузки:", error);
         handleFirestoreError(error);
       } finally {
         setLoading(false);
@@ -126,11 +153,13 @@ export const ProfilePage = () => {
     };
 
     /**
-     * Функция обработки ошибок Firestore
+     * Обработка ошибок Firestore
      * @param {Error} error - Объект ошибки
      */
     const handleFirestoreError = (error) => {
-      // Обработка ошибки отсутствия соединения
+      console.error("Firestore error:", error);
+
+      // Обработка оффлайн-режима
       if (error.code === "unavailable" || error.message.includes("offline")) {
         setOfflineMode(true);
         // Пробуем загрузить данные из localStorage
@@ -153,25 +182,24 @@ export const ProfilePage = () => {
     };
 
     /**
-     * Функция обработки изменения состояния сети
+     * Обработчик изменения состояния сети
      */
     const handleNetworkChange = () => {
       if (navigator.onLine) {
-        // При восстановлении соединения пробуем обновить данные
-        fetchUserData();
+        fetchUserData(); // Повторная загрузка при восстановлении соединения
       } else {
         setOfflineMode(true);
       }
     };
 
-    // Первоначальная загрузка данных
+    // Инициализация загрузки данных
     fetchUserData();
 
-    // Добавляем обработчики изменения состояния сети
+    // Обработчики изменения состояния сети
     window.addEventListener("online", handleNetworkChange);
     window.addEventListener("offline", handleNetworkChange);
 
-    // Функция очистки эффекта
+    // Очистка эффекта
     return () => {
       // Отписываемся от обновлений Firestore
       if (unsubscribe) unsubscribe();
@@ -182,58 +210,82 @@ export const ProfilePage = () => {
   }, [userId, dispatch]); // Зависимости эффекта
 
   /**
-   * Функция удаления курса
+   * Удаление курса из профиля пользователя
    * @param {string} courseId - ID курса для удаления
    */
   const handleRemoveCourse = async (courseId) => {
     if (!userId) return;
+
+    // Проверка оффлайн-режима
+    if (offlineMode) {
+      setError("Удаление недоступно в оффлайн-режиме");
+      return;
+    }
 
     try {
       setRemovingCourseId(courseId); // Устанавливаем курс, который удаляем
       setError(null);
 
       const userRef = doc(db, "users", userId);
-      // Находим курс для удаления
-      const courseToRemove = courses.find((c) => c._id === courseId);
 
-      // Обновляем документ пользователя в Firestore
-      await updateDoc(userRef, {
-        courses: arrayRemove(courseToRemove), // Удаляем курс из массива
-        [`progress.${courseId}`]: deleteField(), // Полное удаление прогресса
-      });
-
-      if (!courseToRemove) {
-        throw new Error("Курс не найден");
+      // Проверка существования документа
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        throw new Error("Документ пользователя не найден");
       }
 
-      // Обновляем состояние в Redux
+      // Находим курс для удаления
+      const courseToRemove = courses.find((c) => c._id === courseId);
+      if (!courseToRemove) {
+        throw new Error("Курс не найден в вашем профиле");
+      }
+
+      // Используем транзакцию для безопасного обновления
+      await runTransaction(db, async (transaction) => {
+        const freshDoc = await transaction.get(userRef);
+        if (!freshDoc.exists()) {
+          throw new Error("Документ пользователя был удален");
+        }
+
+        transaction.update(userRef, {
+          courses: arrayRemove(courseToRemove),
+          [`progress.${courseId}`]: deleteField(),
+        });
+      });
+
+      // Обновляем состояние Redux store
       dispatch(removeCourse(courseId));
     } catch (error) {
       console.error("Ошибка удаления курса:", error);
-      setError(
-        error.code === "unavailable"
-          ? "Изменения будут сохранены при восстановлении соединения"
-          : "Не удалось удалить курс"
-      );
+
+      let errorMessage = "Не удалось удалить курс";
+      if (error.code === "unavailable") {
+        errorMessage =
+          "Изменения будут сохранены при восстановлении соединения";
+      } else if (error.code === "permission-denied") {
+        errorMessage = "Нет прав для изменения данных";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
     } finally {
-      setRemovingCourseId(null); // Сбрасываем состояние загрузки
+      setRemovingCourseId(null);
     }
   };
 
   /**
-   * Функция расчета прогресса по курсу
+   * Расчет прогресса прохождения курса
    * @param {string} courseId - ID курса
-   * @returns {number} Процент завершения курса (0-100)
+   * @returns {number} Процент завершения (0-100)
    */
   const getCourseProgress = (courseId) => {
     if (!progress[courseId]) return 0;
-
     // Количество завершенных тренировок
     const completed = progress[courseId].completedWorkouts?.length || 0;
     // Общее количество тренировок в курсе
     const total =
       courses.find((c) => c._id === courseId)?.workouts?.length || 1;
-
     // Возвращаем процент завершения
     return Math.round((completed / total) * 100);
   };
@@ -258,7 +310,7 @@ export const ProfilePage = () => {
         </S.OfflineWarning>
       )}
 
-      {/* Модальные окна для редактирования данных */}
+      {/* Модальные окна */}
       {openEditLogin && <NewLoginForm setOpenEditLogin={setOpenEditLogin} />}
       {openFormOldPassword && (
         <OldPasswordForm
@@ -269,12 +321,22 @@ export const ProfilePage = () => {
       {openEditPassword && (
         <NewPasswordForm setOpenEditPassword={setOpenEditPassword} />
       )}
+      {showWorkoutSelection && selectedCourse && (
+        <WorkoutSelectionModal
+          course={selectedCourse}
+          onClose={handleCloseWorkoutModal}
+          onWorkoutSelect={handleWorkoutSelect}
+        />
+      )}
 
       {/* Блок с информацией о профиле */}
       <S.ProfileBlock>
         <S.Title>Профиль</S.Title>
         <S.ProfileContainer>
-          <S.ProfileAvatarImg src="/img/avatar1.svg" alt="Аватар" />
+          <S.ProfileAvatarImg
+            src="/img/avatar1.svg"
+            alt="Аватар пользователя"
+          />
           <S.InfoContainer>
             <S.InfoBlock>
               <S.TextInfo>Логин: {login || email}</S.TextInfo>
@@ -319,40 +381,52 @@ export const ProfilePage = () => {
                     onClick={() => handleRemoveCourse(course._id)}
                     $isAdded={true}
                     title="Удалить курс"
-                    disabled={removingCourseId === course._id} // Блокируем кнопку при удалении
+                    disabled={removingCourseId === course._id}
+                    aria-label={`Удалить курс ${course.nameRU}`}
                   >
                     {removingCourseId === course._id ? (
-                      <S.LoadingSpinner /> // Показываем индикатор загрузки
+                      <S.LoadingSpinner aria-hidden="true" />
                     ) : (
-                      <S.AddedIcon src="/img/added-icon.svg" alt="Удалить" />
+                      <S.AddedIcon
+                        src="/img/added-icon.svg"
+                        alt=""
+                        aria-hidden="true"
+                      />
                     )}
                   </S.RemoveButton>
 
-                  {/* Изображение курса */}
+                  {/* Карточка курса */}
                   <S.ImgTraining
                     src={`/img/card-course/card-${course.nameEN}.jpg`}
-                    alt={course.nameRU}
+                    alt={`Обложка курса ${course.nameRU}`}
                   />
 
-                  {/* Информация о курсе */}
                   <S.TrainingContainer>
                     <S.TitleTraining>{course.nameRU}</S.TitleTraining>
+
+                    {/* Информация о курсе */}
                     <S.InfoItems>
                       <S.InfoItem>
                         <S.InfoIcon
                           src="/img/calendar-icon.svg"
                           alt="Длительность"
+                          aria-hidden="true"
                         />
                         <S.InfoText>25 дней</S.InfoText>
                       </S.InfoItem>
                       <S.InfoItem>
-                        <S.InfoIcon src="/img/clock-icon.svg" alt="Время" />
+                        <S.InfoIcon
+                          src="/img/clock-icon.svg"
+                          alt=""
+                          aria-hidden="true"
+                        />
                         <S.InfoText>20-50 мин/день</S.InfoText>
                       </S.InfoItem>
                       <S.InfoItem>
                         <S.InfoIcon
                           src="/img/difficulty-icon.svg"
                           alt="Сложность"
+                          aria-hidden="true"
                         />
                         <S.InfoText>Сложность</S.InfoText>
                       </S.InfoItem>
@@ -366,21 +440,20 @@ export const ProfilePage = () => {
                           {progressPercent}%
                         </S.ProgressPercent>
                       </S.ProgressHeader>
-                      <S.ProgressBar>
+                      <S.ProgressBar
+                        role="progressbar"
+                        aria-valuenow={progressPercent}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      >
                         <S.ProgressBarFill $progress={progressPercent} />
                       </S.ProgressBar>
                     </div>
 
-                    {/* <S.ProgressBar>
-                      Прогресс
-                      <S.ProgressBarFill $progress={progressPercent} />
-                      <S.ProgressText>{progressPercent}%</S.ProgressText>
-                    </S.ProgressBar> */}
-
                     {/* Кнопка перехода к тренировкам */}
                     <S.ProgressButton
-                      as={Link}
-                      to={`/training-video/${course._id}`}
+                      onClick={() => handleWorkoutButtonClick(course)}
+                      aria-label={`${buttonText} в курсе ${course.nameRU}`}
                     >
                       {buttonText}
                     </S.ProgressButton>
@@ -397,13 +470,14 @@ export const ProfilePage = () => {
         )}
       </S.CourseBlock>
 
-      {/* Ссылка на страницу со всеми курсами */}
-      <S.viewAllCourses as={Link} to={"/"}>
+      {/* Ссылка на все курсы */}
+      <S.viewAllCourses
+        as={Link}
+        to="/"
+        aria-label="Перейти к списку всех курсов"
+      >
         Все курсы
       </S.viewAllCourses>
-      {/* <Link to={"/"}>
-        <S.viewAllCourses>Все курсы</S.viewAllCourses>
-      </Link> */}
     </>
   );
 };

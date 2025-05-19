@@ -1,13 +1,21 @@
 import styled from "styled-components";
-import { devices } from "./breakpoints"; // Предполагается файл с медиа-запросами
+import { Link } from "react-router-dom";
+import { devices } from "./breakpoints";
 
-export const VideoPage = styled.main`
-  padding: 2rem;
+/**
+ * Основные стили страницы
+ */
+export const PageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  padding: 2rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+
+  @media ${devices.laptop} {
+    padding: 1.5rem;
+  }
 
   @media ${devices.tablet} {
     padding: 1rem;
@@ -15,28 +23,85 @@ export const VideoPage = styled.main`
   }
 `;
 
-export const VideoPageTitle = styled.h1`
-  font-size: 2rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.textPrimary};
-  text-align: center;
-  margin-bottom: 1rem;
+/**
+ * Стили для хлебных крошек
+ */
+export const Breadcrumbs = styled.nav`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.textSecondary};
+`;
 
-  @media ${devices.tablet} {
-    font-size: 1.5rem;
+export const BreadcrumbItem = styled.span`
+  ${({ $current }) =>
+    $current &&
+    `
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: ${(props) => (props.current ? props.theme.textPrimary : "inherit")};
+    font-weight: ${(props) => (props.current ? "600" : "400")};
+  `}
+`;
+
+export const BreadcrumbLink = styled(Link)`
+  color: ${({ theme }) => theme.primary};
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: ${({ theme }) => theme.primaryHover};
+    text-decoration: underline;
   }
 `;
 
-export const VideoContainer = styled.div`
+export const BreadcrumbSeparator = styled.span`
+  color: ${({ theme }) => theme.textTertiary};
+`;
+
+/**
+ * Основное содержимое страницы
+ */
+export const MainContent = styled.article`
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+`;
+
+export const PageHeader = styled.header`
+  text-align: center;
+`;
+
+export const PageTitle = styled.h1`
+  font-size: 2rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.textPrimary};
+  margin-bottom: 0.5rem;
+
+  @media ${devices.tablet} {
+    font-size: 1.75rem;
+  }
+`;
+
+/**
+ * Секция с видео
+ */
+export const VideoSection = styled.section`
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+`;
+
+export const VideoWrapper = styled.div`
   position: relative;
   padding-bottom: 56.25%; /* 16:9 соотношение */
   height: 0;
-  overflow: hidden;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
-export const Video = styled.iframe`
+export const VideoPlayer = styled.iframe`
   position: absolute;
   top: 0;
   left: 0;
@@ -45,97 +110,162 @@ export const Video = styled.iframe`
   border: none;
 `;
 
-export const ExerciseSection = styled.section`
-  background: ${({ theme }) => theme.backgroundPrimary};
+export const VideoPlaceholder = styled.div`
+  padding: 3rem;
+  text-align: center;
+  background: ${({ theme }) => theme.backgroundSecondary};
+  color: ${({ theme }) => theme.textSecondary};
+  border-radius: 8px;
+`;
+
+/**
+ * Секция с упражнениями
+ */
+export const ExercisesSection = styled.section`
+  background: ${({ theme }) => theme.backgroundSecondary};
   border-radius: 30px;
   padding: 40px;
-  box-shadow: 0 4px 67px #00000021;
+  box-shadow: 0 4px 67px rgba(0, 0, 0, 0.13);
 `;
 
-export const ExerciseWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-export const ExerciseTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  background: ${({ theme }) => theme.backgroundPrimary};
+export const SectionTitle = styled.h2`
+  font-size: 32px;
+  font-weight: 400;
   color: ${({ theme }) => theme.textPrimary};
-  margin-bottom: 0.5rem;
-
-  @media ${devices.tablet} {
-    font-size: 1.25rem;
-  }
+  margin-bottom: 20px;
+  background: none;
 `;
 
-export const ExerciseList = styled.ul`
+export const ExercisesList = styled.ol`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  list-style: none;
+  gap: 24px;
   padding: 0;
   margin: 0;
+  list-style: none;
 `;
 
 export const ExerciseItem = styled.li`
-  padding: 0.75rem 1rem;
   background: ${({ theme }) => theme.backgroundPrimary};
   border-radius: 8px;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.textPrimary};
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${({ theme }) => theme.primaryHover};
-    color: white;
-    transform: translateX(4px);
-  }
-
-  @media ${devices.tablet} {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-  }
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;
 
-export const NoExercisesMessage = styled.p`
-  text-align: center;
+export const ExerciseHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: none;
+`;
+
+// export const ExerciseIndex = styled.span`
+//   font-weight: 700;
+//   color: ${({ theme }) => theme.primary};
+// `;
+
+export const ExerciseName = styled.span`
+  font-weight: 400;
+  font-size: 18px;
+  color: ${({ theme }) => theme.textPrimary};
+  background: none;
+`;
+
+export const ExerciseReps = styled.span`
   color: ${({ theme }) => theme.textSecondary};
-  font-size: 1rem;
-  padding: 1.5rem;
+  font-weight: 400;
+`;
+
+export const ExerciseDescription = styled.p`
+  color: ${({ theme }) => theme.textSecondary};
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 1.5rem;
+`;
+
+export const NoExercises = styled.p`
+  text-align: center;
+  color: ${({ theme }) => theme.textTertiary};
+  padding: 1rem;
+`;
+
+/**
+ * Управление прогрессом
+ */
+export const ProgressControl = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
 `;
 
 export const ProgressButton = styled.button`
-  align-self: center;
-  padding: 16px 26px;
+  padding: 0.875rem 1.75rem;
   background: ${({ theme }) => theme.primary};
-  color: ${({ theme }) => theme.textPrimary};
+  color: white;
   border: none;
-  border-radius: 46px;
-  font-size: 18px;
-  font-weight: 400;
-  text-decoration: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  min-width: 200px;
+  text-align: center;
 
   &:hover {
     background: ${({ theme }) => theme.primaryHover};
-    ${
-      "" /* transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); */
-    }
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(86, 94, 239, 0.2);
   }
 
-  &:active {
-    background-color: ${({ theme }) => theme.backgroundSecondary};
-    color: ${({ theme }) => theme.textSecondary};
+  &:disabled {
+    background: ${({ theme }) => theme.success};
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   @media ${devices.tablet} {
-    padding: 0.6rem 1.2rem;
+    padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
+  }
+`;
+
+/**
+ * Состояния загрузки и ошибок
+ */
+export const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+`;
+
+export const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+`;
+
+export const BackButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: ${({ theme }) => theme.backgroundSecondary};
+  color: ${({ theme }) => theme.textPrimary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: ${({ theme }) => theme.backgroundTertiary};
+    border-color: ${({ theme }) => theme.primary};
   }
 `;
 
@@ -208,6 +338,13 @@ export const ProgressSubmitButton = styled.button`
   }
 `;
 
+export const ProgressForm = styled.div`
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: ${({ theme }) => theme.textPrimary};
+  text-align: center;
+`;
+
 export const CloseButton = styled.button`
   position: absolute;
   top: 1rem;
@@ -225,11 +362,4 @@ export const CloseButton = styled.button`
     color: ${({ theme }) => theme.textPrimary};
     background: ${({ theme }) => theme.backgroundTertiary};
   }
-`;
-
-export const ProgressForm = styled.div`
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: ${({ theme }) => theme.textPrimary};
-  text-align: center;
 `;

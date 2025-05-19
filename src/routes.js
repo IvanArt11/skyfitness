@@ -40,7 +40,10 @@ export const AppRoutes = () => {
         {/* Защищённые маршруты */}
         <Route element={<ProtectedRoute redirectPath="/login" />}>
           {/* Страница с видео тренировки доступна только авторизованным пользователям */}
-          <Route path="training-video/:_id" element={<TrainingVideoPage />} />
+          <Route
+            path="training-video/:courseId/:workoutId"
+            element={<TrainingVideoPage />}
+          />
 
           {/* Страница профиля доступна только авторизованным пользователям */}
           <Route path="profile" element={<ProfilePage courses={courses} />} />
