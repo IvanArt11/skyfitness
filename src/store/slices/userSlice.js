@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 // Начальное состояние для пользователя
-const initialState = {  
+const initialState = {
   login: null,
   password: null,
   email: null,
@@ -47,6 +47,7 @@ const userSlice = createSlice({
 
     // Добавление нового курса
     addCourse: (state, action) => {
+      // Проверяем, нет ли уже такого курса
       if (!state.courses.some((course) => course._id === action.payload._id)) {
         state.courses.push(action.payload);
         // Инициализация прогресса для нового курса
@@ -71,26 +72,28 @@ const userSlice = createSlice({
     // Обновление прогресса по курсу
     updateCourseProgress: (state, action) => {
       const { courseId, workoutId } = action.payload;
-      
+
       // Инициализация структуры прогресса
       if (!state.progress[courseId]) {
         state.progress[courseId] = {
           completedWorkouts: [],
-          totalProgress: 0
+          totalProgress: 0,
         };
       }
-      
+
       // Добавляем workoutId если его нет
       if (!state.progress[courseId].completedWorkouts.includes(workoutId)) {
         state.progress[courseId].completedWorkouts.push(workoutId);
       }
-      
+
       // Пересчитываем общий прогресс
-      const course = state.courses.find(c => c._id === courseId);
+      const course = state.courses.find((c) => c._id === courseId);
       if (course?.workouts) {
         const total = course.workouts.length;
         const completed = state.progress[courseId].completedWorkouts.length;
-        state.progress[courseId].totalProgress = Math.round((completed / total) * 100);
+        state.progress[courseId].totalProgress = Math.round(
+          (completed / total) * 100
+        );
       }
     },
 

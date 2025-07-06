@@ -27,6 +27,8 @@ import {
   onSnapshot,
   deleteField,
   runTransaction,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase"; // Инициализированный экземпляр Firestore
 import { enableIndexedDbPersistence } from "firebase/firestore";
@@ -66,11 +68,24 @@ export const ProfilePage = () => {
   // Получаем курсы и прогресс пользователя из Redux store
   const { courses, progress } = useSelector((state) => state.user);
 
+  // Логирование состояния
+  console.log("Profile state:", {
+    userId,
+    coursesCount: courses?.length,
+    offlineMode,
+    loading,
+  });
+
   /**
    * Обработчик открытия модального окна выбора тренировки
    * @param {Object} course - Объект курса
    */
   const handleWorkoutButtonClick = (course) => {
+    if (!course?._id) {
+      console.error("Invalid course object:", course);
+      setError("Неверный объект курса");
+      return;
+    }
     setSelectedCourse(course);
     setShowWorkoutSelection(true);
   };
@@ -92,6 +107,7 @@ export const ProfilePage = () => {
         workout,
         selectedCourse,
       });
+      setError("Не удалось определить тренировку");
       return;
     }
 
@@ -106,7 +122,11 @@ export const ProfilePage = () => {
 
   // Эффект для загрузки и отслеживания данных пользователя
   useEffect(() => {
-    if (!userId) return; // Если нет userId, выходим
+    if (!userId) {
+      console.warn("No userId, skipping data fetch");
+      setLoading(false);
+      return; // Если нет userId, выходим
+    }
 
     let unsubscribe; // Функция для отписки от обновлений
 
@@ -119,6 +139,7 @@ export const ProfilePage = () => {
         setError(null);
 
         const userRef = doc(db, "users", userId);
+        console.log("Fetching user data for:", userId);
 
         // Подписываемся на изменения документа пользователя
         unsubscribe = onSnapshot(
@@ -127,6 +148,7 @@ export const ProfilePage = () => {
           (doc) => {
             if (doc.exists()) {
               const userData = doc.data();
+              console.log("Received user data:", userData);
               // Обновляем данные в Redux store
               dispatch(
                 setUserCourses({
@@ -140,6 +162,9 @@ export const ProfilePage = () => {
                 JSON.stringify(userData)
               );
               setOfflineMode(false);
+            } else {
+              console.log("User document does not exist, creating...");
+              initializeUserDocument(userId);
             }
           },
           // Обработчик ошибок подписки
@@ -156,6 +181,21 @@ export const ProfilePage = () => {
      * Обработка ошибок Firestore
      * @param {Error} error - Объект ошибки
      */
+    const initializeUserDocument = async (userId) => {
+      try {
+        const userRef = doc(db, "users", userId);
+        await setDoc(userRef, {
+          courses: [],
+          progress: {},
+          createdAt: serverTimestamp(),
+        });
+        console.log("Created new user document");
+      } catch (error) {
+        console.error("Error creating user document:", error);
+        handleFirestoreError(error);
+      }
+    };
+
     const handleFirestoreError = (error) => {
       console.error("Firestore error:", error);
 
@@ -165,6 +205,7 @@ export const ProfilePage = () => {
         // Пробуем загрузить данные из localStorage
         const cachedData = localStorage.getItem(`userData_${userId}`);
         if (cachedData) {
+          console.log("Using cached data in offline mode");
           dispatch(setUserCourses(JSON.parse(cachedData)));
           setError("Оффлайн-режим. Используются кэшированные данные.");
         } else {
@@ -185,6 +226,7 @@ export const ProfilePage = () => {
      * Обработчик изменения состояния сети
      */
     const handleNetworkChange = () => {
+      console.log("Network status changed, online:", navigator.onLine);
       if (navigator.onLine) {
         fetchUserData(); // Повторная загрузка при восстановлении соединения
       } else {
@@ -214,7 +256,17 @@ export const ProfilePage = () => {
    * @param {string} courseId - ID курса для удаления
    */
   const handleRemoveCourse = async (courseId) => {
-    if (!userId) return;
+    console.log("Attempting to remove course", { userId, courseId, courses });
+
+    if (!userId) {
+      setError("Пользователь не авторизован");
+      return;
+    }
+
+    if (!courseId || typeof courseId !== "string") {
+      setError("Неверный ID курса");
+      return;
+    }
 
     // Проверка оффлайн-режима
     if (offlineMode) {
@@ -222,29 +274,39 @@ export const ProfilePage = () => {
       return;
     }
 
+    const courseToRemove = courses.find((c) => c._id === courseId);
+    if (!courseToRemove) {
+      setError("Курс не найден в вашем профиле");
+      return;
+    }
+
+    const confirmRemove = window.confirm(
+      `Вы уверены, что хотите удалить курс "${courseToRemove.nameRU}"?`
+    );
+    if (!confirmRemove) return;
+
     try {
       setRemovingCourseId(courseId); // Устанавливаем курс, который удаляем
       setError(null);
 
       const userRef = doc(db, "users", userId);
+      const auth = getAuth();
 
-      // Проверка существования документа
-      const userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) {
-        throw new Error("Документ пользователя не найден");
-      }
-
-      // Находим курс для удаления
-      const courseToRemove = courses.find((c) => c._id === courseId);
-      if (!courseToRemove) {
-        throw new Error("Курс не найден в вашем профиле");
+      if (!auth.currentUser) {
+        throw new Error("Требуется повторная авторизация");
       }
 
       // Используем транзакцию для безопасного обновления
       await runTransaction(db, async (transaction) => {
         const freshDoc = await transaction.get(userRef);
         if (!freshDoc.exists()) {
-          throw new Error("Документ пользователя был удален");
+          console.log("User document missing, creating new one");
+          transaction.set(userRef, {
+            courses: [],
+            progress: {},
+            createdAt: serverTimestamp(),
+          });
+          throw new Error("Профиль был создан. Повторите удаление.");
         }
 
         transaction.update(userRef, {
@@ -255,6 +317,7 @@ export const ProfilePage = () => {
 
       // Обновляем состояние Redux store
       dispatch(removeCourse(courseId));
+      console.log("Course removed successfully");
     } catch (error) {
       console.error("Ошибка удаления курса:", error);
 
@@ -362,7 +425,11 @@ export const ProfilePage = () => {
         {courses?.length > 0 ? (
           <S.CourseItems>
             {courses.map((course) => {
-              if (!course?._id) return null; // Пропускаем курсы без ID
+              // Пропускаем курсы без ID
+              if (!course?._id) {
+                console.warn("Course without ID found:", course);
+                return null;
+              }
 
               // Рассчитываем прогресс по курсу
               const progressPercent = getCourseProgress(course._id);
@@ -489,11 +556,17 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
   const dispatch = useDispatch();
   const { email, login } = useAuth();
   const [newLog, setNewLog] = useState(login || email);
+  const [error, setError] = useState(null);
 
   /**
    * Функция сохранения нового логина
    */
   const saveNewLogin = () => {
+    if (!newLog.trim()) {
+      setError("Логин не может быть пустым");
+      return;
+    }
+
     dispatch(setNewLogin(newLog)); // Обновляем в Redux
     localStorage.setItem("login", JSON.stringify(newLog)); // Сохраняем в localStorage
     setOpenEditLogin(false); // Закрываем модальное окно
@@ -524,12 +597,14 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
             type="text"
             placeholder="Логин"
             value={newLog}
-            onChange={(e) => setNewLog(e.target.value)}
+            onChange={(e) => {
+              setNewLog(e.target.value);
+              setError(null);
+            }}
           />
         </S.Inputs>
-        <S.Button disabled={!newLog.trim()} onClick={saveNewLogin}>
-          Сохранить
-        </S.Button>
+        {error && <S.ErrorText>{error}</S.ErrorText>}
+        <S.Button onClick={saveNewLogin}>Сохранить</S.Button>
       </S.PopupLogin>
     </S.BlackoutWrapper>
   );
@@ -541,11 +616,18 @@ const NewLoginForm = ({ setOpenEditLogin }) => {
 const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
   const [oldPass, setOldPass] = useState("");
   const [errorPassword, setErrorPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   /**
    * Функция проверки старого пароля
    */
   const checkOldPassword = async () => {
+    if (!oldPass.trim()) {
+      setErrorPassword("Введите пароль");
+      return;
+    }
+
+    setLoading(true);
     const auth = getAuth();
     const user = auth.currentUser;
     // Создаем credentials для аутентификации
@@ -557,7 +639,10 @@ const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
       setOpenFormOldPassword(false);
       setOpenEditPassword(true); // Открываем форму нового пароля
     } catch (error) {
-      setErrorPassword(true); // Показываем ошибку, если пароль неверный
+      console.error("Reauthentication error:", error);
+      setErrorPassword("Неверный пароль"); // Показываем ошибку, если пароль неверный
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -586,12 +671,18 @@ const OldPasswordForm = ({ setOpenFormOldPassword, setOpenEditPassword }) => {
             type="password"
             placeholder="Старый пароль"
             value={oldPass}
-            onChange={(e) => setOldPass(e.target.value)}
+            onChange={(e) => {
+              setOldPass(e.target.value);
+              setErrorPassword(false);
+            }}
           />
         </S.Inputs>
-        {errorPassword && <S.ErrorText>Неверный пароль</S.ErrorText>}
-        <S.Button disabled={!oldPass.trim()} onClick={checkOldPassword}>
-          Далее
+        {errorPassword && <S.ErrorText>{errorPassword}</S.ErrorText>}
+        <S.Button
+          disabled={!oldPass.trim() || loading}
+          onClick={checkOldPassword}
+        >
+          {loading ? "Проверка..." : "Далее"}
         </S.Button>
       </S.PopupLogin>
     </S.BlackoutWrapper>
@@ -605,11 +696,24 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
   const dispatch = useDispatch();
   const [newPass, setNewPass] = useState("");
   const [repeatNewPass, setRepeatNewPass] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   /**
    * Функция сохранения нового пароля
    */
   const saveNewPassword = async () => {
+    if (newPass !== repeatNewPass) {
+      setError("Пароли не совпадают");
+      return;
+    }
+
+    if (newPass.length < 6) {
+      setError("Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
+    setLoading(true);
     const auth = getAuth();
     const user = auth.currentUser;
 
@@ -619,7 +723,10 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
       dispatch(setNewPassword(newPass)); // Обновляем в Redux
       setOpenEditPassword(false); // Закрываем модальное окно
     } catch (error) {
-      console.error("Ошибка при смене пароля:", error);
+      console.error("Password update error:", error);
+      setError("Ошибка при смене пароля");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -646,27 +753,30 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
           <S.TitleInput>Новый пароль:</S.TitleInput>
           <S.Input
             type="password"
-            placeholder="Пароль"
+            placeholder="Пароль (минимум 6 символов)"
             value={newPass}
-            onChange={(e) => setNewPass(e.target.value)}
+            onChange={(e) => {
+              setNewPass(e.target.value);
+              setError(null);
+            }}
           />
           <S.Input
             type="password"
             placeholder="Повторите пароль"
             value={repeatNewPass}
-            onChange={(e) => setRepeatNewPass(e.target.value)}
+            onChange={(e) => {
+              setRepeatNewPass(e.target.value);
+              setError(null);
+            }}
           />
         </S.Inputs>
-        {newPass !== repeatNewPass ? (
-          <S.WarningMessage>Пароли не совпадают</S.WarningMessage>
-        ) : (
-          <S.Button
-            disabled={!newPass.trim() || !repeatNewPass.trim()}
-            onClick={saveNewPassword}
-          >
-            Сохранить
-          </S.Button>
-        )}
+        {error && <S.ErrorText>{error}</S.ErrorText>}
+        <S.Button
+          disabled={!newPass.trim() || !repeatNewPass.trim() || loading}
+          onClick={saveNewPassword}
+        >
+          {loading ? "Сохранение..." : "Сохранить"}
+        </S.Button>
       </S.PopupPassword>
     </S.BlackoutWrapper>
   );

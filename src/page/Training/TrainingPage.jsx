@@ -6,6 +6,8 @@ import { useAuth } from "../../hooks/use-auth";
 import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
 import { addCourse } from "../../store/slices/userSlice"; // Импортируем action для добавления курса
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../../firebase";
 
 /**
  * Страница курса.
@@ -52,13 +54,20 @@ export const TrainingPage = ({ courses = {} }) => {
         throw new Error("Курс не найден");
       }
 
+      // Добавляем курс в Firestore
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, {
+        courses: arrayUnion(scills),
+      });
+
       // Добавляем курс в Redux
       dispatch(addCourse(scills));
       navigate("/profile"); // Перенаправляем на страницу профиля
     } catch (error) {
-      setError(error.message);
+      console.error("Ошибка добавления курса:", error);
+      setError("Не удалось добавить курс. Попробуйте позже.");
     }
-  }, [isAuth, scills, dispatch, navigate]);
+  }, [isAuth, scills, dispatch, navigate, userId]);
 
   // Отображение ошибки
   if (error) {
