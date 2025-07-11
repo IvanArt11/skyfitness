@@ -81,12 +81,28 @@ export const ProfilePage = () => {
    * @param {Object} course - Объект курса
    */
   const handleWorkoutButtonClick = (course) => {
-    if (!course?._id) {
-      console.error("Invalid course object:", course);
+    if (!course?._id || !Array.isArray(course.workouts)) {
+      console.error("Неверный объект курса:", course);
       setError("Неверный объект курса");
       return;
     }
-    setSelectedCourse(course);
+
+    // Получаем полные данные тренировок из хранилища или пропсов
+    const fullWorkouts = course.workouts.map((workoutId) => {
+      // Здесь нужно получить полный объект тренировки по ID
+      // Например, из Redux store или другого источника данных
+      return {
+        _id: workoutId,
+        name: `Тренировка ${workoutId}`, // Временное решение, нужно заменить на реальное название
+      };
+    });
+
+    const validatedCourse = {
+      ...course,
+      workouts: fullWorkouts,
+    };
+
+    setSelectedCourse(validatedCourse);
     setShowWorkoutSelection(true);
   };
 
@@ -103,7 +119,7 @@ export const ProfilePage = () => {
    */
   const handleWorkoutSelect = (workout) => {
     if (!workout?._id || !selectedCourse?._id) {
-      console.error("Недостаточно данных для перехода:", {
+      console.error("Данные для перехода неполные:", {
         workout,
         selectedCourse,
       });
@@ -111,11 +127,7 @@ export const ProfilePage = () => {
       return;
     }
 
-    console.log("Переход на тренировку:", {
-      courseId: selectedCourse._id,
-      workoutId: workout._id,
-    });
-
+    // Переход на страницу тренировки
     navigate(`/training-video/${selectedCourse._id}/${workout._id}`);
     setShowWorkoutSelection(false);
   };

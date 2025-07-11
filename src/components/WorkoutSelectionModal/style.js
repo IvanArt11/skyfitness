@@ -118,9 +118,10 @@ export const WorkoutButton = styled.button`
   gap: 4px;
 
   &:hover {
-    background: #f9f9f9;
-    border-color: #565eef;
+    background: #FFFFFF;
+    border-color: #bcec30;
     box-shadow: 0 2px 8px rgba(86, 94, 239, 0.1);
+    transform: scale(1.01);
   }
 
   &:active {
@@ -128,7 +129,7 @@ export const WorkoutButton = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid #565eef;
+    outline: 2px solid #bcec30;
     outline-offset: 2px;
   }
 `;
@@ -137,12 +138,14 @@ export const WorkoutNumber = styled.span`
   font-size: 24px;
   font-weight: 400;
   color: #000000;
+  background: #ffffff;
 `;
 
 export const WorkoutName = styled.span`
   font-size: 16px;
   font-weight: 500;
   color: #000000;
+  background: #ffffff;
 `;
 
 export const EmptyMessage = styled.p`
