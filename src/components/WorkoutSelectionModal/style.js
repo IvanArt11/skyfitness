@@ -16,11 +16,11 @@ export const BlackoutWrapper = styled.div`
 
 export const PopupWorkoutSelection = styled.div`
   position: relative;
-  background: white;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 600px;
+  max-width: 460px;
   max-height: 80vh;
   overflow-y: auto;
   padding: 40px;
@@ -118,7 +118,7 @@ export const WorkoutButton = styled.button`
   gap: 4px;
 
   &:hover {
-    background: #FFFFFF;
+    background: #ffffff;
     border-color: #bcec30;
     box-shadow: 0 2px 8px rgba(86, 94, 239, 0.1);
     transform: scale(1.01);

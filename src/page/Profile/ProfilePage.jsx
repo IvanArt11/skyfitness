@@ -1,6 +1,6 @@
 /**
  * Компонент страницы профиля пользователя
- * Отображает информацию о пользователе, его курсы и позволяет редактировать данные
+ * Отображает информацию о пользователе, его курсы и прогресс по ним
  */
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,7 +29,7 @@ import {
   runTransaction,
   setDoc,
   serverTimestamp,
-} from "firebase/firestore";
+} from "firebase/firestore"; // Инициализированный экземпляр Firestore
 import { db } from "../../firebase"; // Инициализированный экземпляр Firestore
 import { enableIndexedDbPersistence } from "firebase/firestore";
 import { WorkoutSelectionModal } from "../../components/WorkoutSelectionModal/WorkoutSelectionModal";
@@ -48,7 +48,7 @@ export const ProfilePage = () => {
   // Получаем функцию dispatch для работы с Redux store
   const dispatch = useDispatch();
 
-  // Состояния для управления модальными окнами
+  // Состояния для управления модальными окнами UI
   const [openEditLogin, setOpenEditLogin] = useState(false);
   const [openFormOldPassword, setOpenFormOldPassword] = useState(false);
   const [openEditPassword, setOpenEditPassword] = useState(false);
@@ -68,14 +68,6 @@ export const ProfilePage = () => {
   // Получаем курсы и прогресс пользователя из Redux store
   const { courses, progress } = useSelector((state) => state.user);
 
-  // Логирование состояния
-  console.log("Profile state:", {
-    userId,
-    coursesCount: courses?.length,
-    offlineMode,
-    loading,
-  });
-
   /**
    * Обработчик открытия модального окна выбора тренировки
    * @param {Object} course - Объект курса
@@ -88,54 +80,21 @@ export const ProfilePage = () => {
     }
 
     // Получаем полные данные тренировок из хранилища или пропсов
-    const fullWorkouts = course.workouts.map((workoutId) => {
-      // Здесь нужно получить полный объект тренировки по ID
-      // Например, из Redux store или другого источника данных
-      return {
-        _id: workoutId,
-        name: `Тренировка ${workoutId}`, // Временное решение, нужно заменить на реальное название
-      };
-    });
+    const fullWorkouts = course.workouts.map((workoutId) => ({
+      _id: workoutId,
+      name: `Тренировка ${workoutId}`,
+    }));
 
-    const validatedCourse = {
+    setSelectedCourse({
       ...course,
       workouts: fullWorkouts,
-    };
-
-    setSelectedCourse(validatedCourse);
+    });
     setShowWorkoutSelection(true);
   };
 
-  /**
-   * Закрытие модального окна выбора тренировки
-   */
-  const handleCloseWorkoutModal = () => {
-    setShowWorkoutSelection(false);
-  };
-
-  /**
-   * Обработчик выбора конкретной тренировки
-   * @param {Object} workout - Выбранная тренировка
-   */
-  const handleWorkoutSelect = (workout) => {
-    if (!workout?._id || !selectedCourse?._id) {
-      console.error("Данные для перехода неполные:", {
-        workout,
-        selectedCourse,
-      });
-      setError("Не удалось определить тренировку");
-      return;
-    }
-
-    // Переход на страницу тренировки
-    navigate(`/training-video/${selectedCourse._id}/${workout._id}`);
-    setShowWorkoutSelection(false);
-  };
-
-  // Эффект для загрузки и отслеживания данных пользователя
+  // Эффект для загрузки данных пользователя
   useEffect(() => {
     if (!userId) {
-      console.warn("No userId, skipping data fetch");
       setLoading(false);
       return; // Если нет userId, выходим
     }
@@ -151,7 +110,6 @@ export const ProfilePage = () => {
         setError(null);
 
         const userRef = doc(db, "users", userId);
-        console.log("Fetching user data for:", userId);
 
         // Подписываемся на изменения документа пользователя
         unsubscribe = onSnapshot(
@@ -160,7 +118,6 @@ export const ProfilePage = () => {
           (doc) => {
             if (doc.exists()) {
               const userData = doc.data();
-              console.log("Received user data:", userData);
               // Обновляем данные в Redux store
               dispatch(
                 setUserCourses({
@@ -175,7 +132,6 @@ export const ProfilePage = () => {
               );
               setOfflineMode(false);
             } else {
-              console.log("User document does not exist, creating...");
               initializeUserDocument(userId);
             }
           },
@@ -201,7 +157,6 @@ export const ProfilePage = () => {
           progress: {},
           createdAt: serverTimestamp(),
         });
-        console.log("Created new user document");
       } catch (error) {
         console.error("Error creating user document:", error);
         handleFirestoreError(error);
@@ -212,12 +167,11 @@ export const ProfilePage = () => {
       console.error("Firestore error:", error);
 
       // Обработка оффлайн-режима
-      if (error.code === "unavailable" || error.message.includes("offline")) {
+      if (error.code === "unavailable") {
         setOfflineMode(true);
         // Пробуем загрузить данные из localStorage
         const cachedData = localStorage.getItem(`userData_${userId}`);
         if (cachedData) {
-          console.log("Using cached data in offline mode");
           dispatch(setUserCourses(JSON.parse(cachedData)));
           setError("Оффлайн-режим. Используются кэшированные данные.");
         } else {
@@ -234,33 +188,74 @@ export const ProfilePage = () => {
       }
     };
 
-    /**
-     * Обработчик изменения состояния сети
-     */
-    const handleNetworkChange = () => {
-      console.log("Network status changed, online:", navigator.onLine);
-      if (navigator.onLine) {
-        fetchUserData(); // Повторная загрузка при восстановлении соединения
-      } else {
-        setOfflineMode(true);
-      }
-    };
-
-    // Инициализация загрузки данных
     fetchUserData();
 
-    // Обработчики изменения состояния сети
-    window.addEventListener("online", handleNetworkChange);
-    window.addEventListener("offline", handleNetworkChange);
-
-    // Очистка эффекта
     return () => {
-      // Отписываемся от обновлений Firestore
       if (unsubscribe) unsubscribe();
-      // Удаляем обработчики событий сети
-      window.removeEventListener("online", handleNetworkChange);
-      window.removeEventListener("offline", handleNetworkChange);
     };
+  }, [userId, dispatch]);
+
+  /**
+   * Расчет прогресса прохождения курса
+   * @param {string} courseId - ID курса
+   * @returns {number} Процент завершения (0-100)
+   */
+  const getCourseProgress = (courseId) => {
+    if (!progress[courseId]) return 0;
+
+    const course = courses.find((c) => c._id === courseId);
+    if (!course?.workouts?.length) return 0;
+
+    let totalExercises = 0;
+    let completedExercises = 0;
+
+    // Проходим по всем тренировкам курса
+    course.workouts.forEach((workoutId) => {
+      const workoutData = progress[courseId].workouts?.[workoutId];
+      if (!workoutData) return;
+
+      // Считаем прогресс по упражнениям
+      if (workoutData.exercisesProgress) {
+        Object.entries(workoutData.exercisesProgress).forEach(
+          ([exId, completed]) => {
+            const exercise = workoutData.exercises?.find((e) => e._id === exId);
+            if (exercise) {
+              totalExercises++;
+              const exerciseMax = exercise.quantity || 1;
+              completedExercises += Math.min(completed / exerciseMax, 1);
+            }
+          }
+        );
+      } else {
+        // Совместимость со старой версией (только общий прогресс)
+        totalExercises++;
+        completedExercises += (workoutData.progress || 0) / 100;
+      }
+    });
+
+    return totalExercises > 0
+      ? Math.round((completedExercises / totalExercises) * 100)
+      : 0;
+  };
+
+  // Эффект для подписки на изменения прогресса
+  useEffect(() => {
+    if (!userId) return;
+
+    const userRef = doc(db, "users", userId);
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const userData = doc.data();
+        dispatch(
+          setUserCourses({
+            courses: userData.courses || [],
+            progress: userData.progress || {},
+          })
+        );
+      }
+    });
+
+    return () => unsubscribe();
   }, [userId, dispatch]); // Зависимости эффекта
 
   /**
@@ -268,32 +263,13 @@ export const ProfilePage = () => {
    * @param {string} courseId - ID курса для удаления
    */
   const handleRemoveCourse = async (courseId) => {
-    console.log("Attempting to remove course", { userId, courseId, courses });
-
-    if (!userId) {
-      setError("Пользователь не авторизован");
-      return;
-    }
-
-    if (!courseId || typeof courseId !== "string") {
-      setError("Неверный ID курса");
-      return;
-    }
-
-    // Проверка оффлайн-режима
-    if (offlineMode) {
-      setError("Удаление недоступно в оффлайн-режиме");
-      return;
-    }
+    if (!userId || !courseId) return;
 
     const courseToRemove = courses.find((c) => c._id === courseId);
-    if (!courseToRemove) {
-      setError("Курс не найден в вашем профиле");
-      return;
-    }
+    if (!courseToRemove) return;
 
     const confirmRemove = window.confirm(
-      `Вы уверены, что хотите удалить курс "${courseToRemove.nameRU}"?`
+      `Удалить курс "${courseToRemove.nameRU}"?`
     );
     if (!confirmRemove) return;
 
@@ -302,17 +278,11 @@ export const ProfilePage = () => {
       setError(null);
 
       const userRef = doc(db, "users", userId);
-      const auth = getAuth();
-
-      if (!auth.currentUser) {
-        throw new Error("Требуется повторная авторизация");
-      }
 
       // Используем транзакцию для безопасного обновления
       await runTransaction(db, async (transaction) => {
         const freshDoc = await transaction.get(userRef);
         if (!freshDoc.exists()) {
-          console.log("User document missing, creating new one");
           transaction.set(userRef, {
             courses: [],
             progress: {},
@@ -329,43 +299,18 @@ export const ProfilePage = () => {
 
       // Обновляем состояние Redux store
       dispatch(removeCourse(courseId));
-      console.log("Course removed successfully");
     } catch (error) {
       console.error("Ошибка удаления курса:", error);
-
-      let errorMessage = "Не удалось удалить курс";
-      if (error.code === "unavailable") {
-        errorMessage =
-          "Изменения будут сохранены при восстановлении соединения";
-      } else if (error.code === "permission-denied") {
-        errorMessage = "Нет прав для изменения данных";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setError(errorMessage);
+      setError(
+        error.code === "unavailable"
+          ? "Изменения будут сохранены при восстановлении соединения"
+          : "Не удалось удалить курс"
+      );
     } finally {
       setRemovingCourseId(null);
     }
   };
 
-  /**
-   * Расчет прогресса прохождения курса
-   * @param {string} courseId - ID курса
-   * @returns {number} Процент завершения (0-100)
-   */
-  const getCourseProgress = (courseId) => {
-    if (!progress[courseId]) return 0;
-    // Количество завершенных тренировок
-    const completed = progress[courseId].completedWorkouts?.length || 0;
-    // Общее количество тренировок в курсе
-    const total =
-      courses.find((c) => c._id === courseId)?.workouts?.length || 1;
-    // Возвращаем процент завершения
-    return Math.round((completed / total) * 100);
-  };
-
-  // Отображаем загрузку, если данные еще не получены
   if (loading) {
     return <S.Loading>Загрузка данных...</S.Loading>;
   }
@@ -399,8 +344,10 @@ export const ProfilePage = () => {
       {showWorkoutSelection && selectedCourse && (
         <WorkoutSelectionModal
           course={selectedCourse}
-          onClose={handleCloseWorkoutModal}
-          onWorkoutSelect={handleWorkoutSelect}
+          onClose={() => setShowWorkoutSelection(false)}
+          onWorkoutSelect={(workout) =>
+            navigate(`/training-video/${selectedCourse._id}/${workout._id}`)
+          }
         />
       )}
 
@@ -408,10 +355,7 @@ export const ProfilePage = () => {
       <S.ProfileBlock>
         <S.Title>Профиль</S.Title>
         <S.ProfileContainer>
-          <S.ProfileAvatarImg
-            src="/img/avatar1.svg"
-            alt="Аватар пользователя"
-          />
+          <S.ProfileAvatarImg src="/img/avatar1.svg" alt="Аватар" />
           <S.InfoContainer>
             <S.InfoBlock>
               <S.TextInfo>Логин: {login || email}</S.TextInfo>
@@ -438,10 +382,7 @@ export const ProfilePage = () => {
           <S.CourseItems>
             {courses.map((course) => {
               // Пропускаем курсы без ID
-              if (!course?._id) {
-                console.warn("Course without ID found:", course);
-                return null;
-              }
+              if (!course?._id) return null;
 
               // Рассчитываем прогресс по курсу
               const progressPercent = getCourseProgress(course._id);
@@ -458,26 +399,19 @@ export const ProfilePage = () => {
                   {/* Кнопка удаления курса */}
                   <S.RemoveButton
                     onClick={() => handleRemoveCourse(course._id)}
-                    $isAdded={true}
-                    title="Удалить курс"
                     disabled={removingCourseId === course._id}
-                    aria-label={`Удалить курс ${course.nameRU}`}
                   >
                     {removingCourseId === course._id ? (
-                      <S.LoadingSpinner aria-hidden="true" />
+                      <S.LoadingSpinner />
                     ) : (
-                      <S.AddedIcon
-                        src="/img/added-icon.svg"
-                        alt=""
-                        aria-hidden="true"
-                      />
+                      <S.AddedIcon src="/img/added-icon.svg" alt="" />
                     )}
                   </S.RemoveButton>
 
                   {/* Карточка курса */}
                   <S.ImgTraining
                     src={`/img/card-course/card-${course.nameEN}.jpg`}
-                    alt={`Обложка курса ${course.nameRU}`}
+                    alt={`Курс ${course.nameRU}`}
                   />
 
                   <S.TrainingContainer>
@@ -486,27 +420,15 @@ export const ProfilePage = () => {
                     {/* Информация о курсе */}
                     <S.InfoItems>
                       <S.InfoItem>
-                        <S.InfoIcon
-                          src="/img/calendar-icon.svg"
-                          alt="Длительность"
-                          aria-hidden="true"
-                        />
+                        <S.InfoIcon src="/img/calendar-icon.svg" alt="" />
                         <S.InfoText>25 дней</S.InfoText>
                       </S.InfoItem>
                       <S.InfoItem>
-                        <S.InfoIcon
-                          src="/img/clock-icon.svg"
-                          alt=""
-                          aria-hidden="true"
-                        />
+                        <S.InfoIcon src="/img/clock-icon.svg" alt="" />
                         <S.InfoText>20-50 мин/день</S.InfoText>
                       </S.InfoItem>
                       <S.InfoItem>
-                        <S.InfoIcon
-                          src="/img/difficulty-icon.svg"
-                          alt="Сложность"
-                          aria-hidden="true"
-                        />
+                        <S.InfoIcon src="/img/difficulty-icon.svg" alt="" />
                         <S.InfoText>Сложность</S.InfoText>
                       </S.InfoItem>
                     </S.InfoItems>
@@ -532,7 +454,6 @@ export const ProfilePage = () => {
                     {/* Кнопка перехода к тренировкам */}
                     <S.ProgressButton
                       onClick={() => handleWorkoutButtonClick(course)}
-                      aria-label={`${buttonText} в курсе ${course.nameRU}`}
                     >
                       {buttonText}
                     </S.ProgressButton>
@@ -550,11 +471,7 @@ export const ProfilePage = () => {
       </S.CourseBlock>
 
       {/* Ссылка на все курсы */}
-      <S.viewAllCourses
-        as={Link}
-        to="/"
-        aria-label="Перейти к списку всех курсов"
-      >
+      <S.viewAllCourses as={Link} to="/">
         Все курсы
       </S.viewAllCourses>
     </>

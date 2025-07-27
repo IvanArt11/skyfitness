@@ -1,20 +1,35 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import * as S from "./styles";
 
 export const ProgressForm = ({
   onClose,
+  onSave,
   workoutData,
-  userId,
-  progressColors,
-  currentProgress,
+  currentExercisesProgress,
 }) => {
-  const [progress, setProgress] = useState(currentProgress);
+  const [exercisesProgress, setExercisesProgress] = useState(
+    workoutData.exercises.reduce((acc, exercise) => {
+      acc[exercise._id] = currentExercisesProgress[exercise._id] || 0;
+      return acc;
+    }, {})
+  );
+
+  const handleExerciseProgressChange = (exerciseId, value) => {
+    const numValue = Math.max(0, parseInt(value) || 0);
+    const maxValue =
+      workoutData.exercises.find((ex) => ex._id === exerciseId)?.quantity || 1;
+    const clampedValue = Math.min(numValue, maxValue);
+
+    setExercisesProgress((prev) => ({
+      ...prev,
+      [exerciseId]: clampedValue,
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Логика сохранения прогресса
-    onClose();
+    onSave(exercisesProgress);
   };
 
   return (
@@ -24,17 +39,33 @@ export const ProgressForm = ({
           &times;
         </S.CloseButton>
 
-        <S.ProgressFormTitle>Ваш прогресс</S.ProgressFormTitle>
+        <S.ProgressFormTitle>Мой прогресс</S.ProgressFormTitle>
 
         <form onSubmit={handleSubmit}>
-          <S.ProgressInput
-            type="number"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={(e) => setProgress(e.target.value)}
-            aria-label="Процент выполнения тренировки"
-          />
+          <S.ExercisesProgressList>
+            {workoutData.exercises.map((exercise, index) => (
+              <S.ExerciseProgressItem
+                key={`exercise-${exercise._id || index}`} // Используем index как fallback
+              >
+                <S.ProgressFormLabel>
+                  Сколько раз вы сделали "{exercise.name}"?
+                  <br />
+                  (максимум: {exercise.quantity})
+                </S.ProgressFormLabel>
+                <S.ProgressInput
+                  type="number"
+                  min="0"
+                  max={exercise.quantity}
+                  value={exercisesProgress[exercise._id] || 0}
+                  onChange={(e) =>
+                    handleExerciseProgressChange(exercise._id, e.target.value)
+                  }
+                  aria-label={`Количество выполненных ${exercise.name}`}
+                />
+              </S.ExerciseProgressItem>
+            ))}
+          </S.ExercisesProgressList>
+
           <S.ProgressSubmitButton type="submit">
             Сохранить прогресс
           </S.ProgressSubmitButton>
@@ -46,8 +77,7 @@ export const ProgressForm = ({
 
 ProgressForm.propTypes = {
   onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
   workoutData: PropTypes.object.isRequired,
-  userId: PropTypes.string.isRequired,
-  progressColors: PropTypes.array.isRequired,
-  currentProgress: PropTypes.number.isRequired,
+  currentExercisesProgress: PropTypes.object.isRequired,
 };

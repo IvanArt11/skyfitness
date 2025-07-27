@@ -90,9 +90,11 @@ export const PageTitle = styled.h1`
  * Секция с видео
  */
 export const VideoSection = styled.section`
-  border-radius: 12px;
+  border-radius: 30px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  weight: 1160px;
+  height: 639px;
 `;
 
 export const VideoWrapper = styled.div`
@@ -115,7 +117,8 @@ export const VideoPlaceholder = styled.div`
   text-align: center;
   background: ${({ theme }) => theme.backgroundSecondary};
   color: ${({ theme }) => theme.textSecondary};
-  border-radius: 8px;
+  border-radius: 30px;
+  height: 639px;
 `;
 
 /**
@@ -195,21 +198,22 @@ export const NoExercises = styled.p`
  */
 export const ProgressControl = styled.div`
   display: flex;
-  justify-content: center;
-  margin-top: 1rem;
+  justify-content: flex-start;
+  margin-top: 40px;
+  background: #ffffff;
 `;
 
 export const ProgressButton = styled.button`
-  padding: 0.875rem 1.75rem;
+  padding: 16px 26px;
   background: ${({ theme }) => theme.primary};
-  color: white;
+  color: #000000;
   border: none;
-  border-radius: 50px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 46px;
+  font-size: 18px;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: 200px;
+  width: 320px;
   text-align: center;
 
   &:hover {
@@ -298,10 +302,11 @@ export const ProgressFormContainer = styled.div`
 `;
 
 export const ProgressFormTitle = styled.h3`
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
+  font-size: 32px;
+  margin-bottom: 48px;
   color: ${({ theme }) => theme.textPrimary};
-  text-align: center;
+  text-align: start;
+  background: #ffffff;
 `;
 
 export const ProgressInput = styled.input`
@@ -309,7 +314,8 @@ export const ProgressInput = styled.input`
   padding: 0.75rem;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  font-size: 1rem;
+  font-weight: 400;
+  font-size: 18px;
   margin-bottom: 1.5rem;
   background: ${({ theme }) => theme.backgroundSecondary};
   color: ${({ theme }) => theme.textPrimary};
@@ -323,13 +329,13 @@ export const ProgressInput = styled.input`
 
 export const ProgressSubmitButton = styled.button`
   width: 100%;
-  padding: 0.75rem;
+  padding: 16px 26px;
   background: ${({ theme }) => theme.primary};
-  color: white;
+  color: ${({ theme }) => theme.textPrimary};
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 46px;
+  font-size: 18px;
+  font-weight: 400;
   cursor: pointer;
   transition: background 0.2s ease;
 
@@ -362,4 +368,45 @@ export const CloseButton = styled.button`
     color: ${({ theme }) => theme.textPrimary};
     background: ${({ theme }) => theme.backgroundTertiary};
   }
+`;
+
+export const ExercisesProgressList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+`;
+
+export const ExerciseProgressItem = styled.li`
+  margin-bottom: 20px;
+  background: #ffffff;
+`;
+
+export const ProgressFormGroup = styled.div`
+  margin-bottom: 20px;
+  background: #ffffff;
+`;
+
+export const ProgressFormLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 400;
+  font-size: 18px;
+  background: #ffffff;
+`;
+
+export const ProgressBarContainer = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+`;
+
+export const ProgressBarFill = styled.div`
+  height: 100%;
+  background-color: #00c1ff;
+  border-radius: 4px;
+  width: ${(props) => props.$percentage}%;
+  transition: width 0.3s ease;
 `;
