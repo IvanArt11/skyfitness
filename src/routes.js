@@ -10,32 +10,47 @@ import { PageLayout } from "./components/PageLayout/PageLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import useCourses from "./hooks/useCourses"; // Импортируем хук для загрузки курсов
 
+// Компоненты с загрузкой данных только когда нужно
+const MainPageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <MainPage courses={courses} />;
+};
+
+const TrainingPageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <TrainingPage courses={courses} />;
+};
+
+const ProfilePageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <ProfilePage courses={courses} />;
+};
+
 /**
  * Компонент маршрутизации приложения.
  */
 export const AppRoutes = () => {
-  const { courses, loading, error } = useCourses(); // Загружаем данные курсов
-
-  if (loading) {
-    return <div>Загрузка курсов...</div>; // Отображаем загрузку, пока данные не загружены
-  }
-
-  if (error) {
-    return <div>Ошибка: {error}</div>; // Отображаем ошибку, если она возникла
-  }
-
   return (
     <Routes>
       {/* Главная страница доступна всем */}
-      <Route index element={<MainPage courses={courses} />} />
+      <Route index element={<MainPageWithCourses />} />
 
       {/* Общий макет для страниц, которые используют PageLayout */}
       <Route path="/" element={<PageLayout />}>
         {/* Страница курса доступна всем */}
-        <Route
-          path="courses/:_id"
-          element={<TrainingPage courses={courses} />}
-        />
+        <Route path="courses/:_id" element={<TrainingPageWithCourses />} />
 
         {/* Защищённые маршруты */}
         <Route element={<ProtectedRoute redirectPath="/login" />}>
@@ -46,7 +61,7 @@ export const AppRoutes = () => {
           />
 
           {/* Страница профиля доступна только авторизованным пользователям */}
-          <Route path="profile" element={<ProfilePage courses={courses} />} />
+          <Route path="profile" element={<ProfilePageWithCourses />} />
         </Route>
       </Route>
 
