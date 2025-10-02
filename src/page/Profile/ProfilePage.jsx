@@ -30,9 +30,10 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore"; // Инициализированный экземпляр Firestore
-import { db } from "../../firebase"; // Инициализированный экземпляр Firestore
-import { enableIndexedDbPersistence } from "firebase/firestore";
+import { db } from "../../firebase";
+import { enableIndexedDbPersistence } from "firebase/firestore"; // Инициализированный экземпляр Firestore
 import { WorkoutSelectionModal } from "../../components/WorkoutSelectionModal/WorkoutSelectionModal";
+import { removeCourseFromUser } from "../../api";
 
 // Включаем оффлайн-поддержку Firestore с обработкой возможных ошибок
 enableIndexedDbPersistence(db).catch((err) => {
@@ -67,6 +68,8 @@ export const ProfilePage = () => {
   const { email, login, password, id: userId } = useAuth();
   // Получаем курсы и прогресс пользователя из Redux store
   const { courses, progress } = useSelector((state) => state.user);
+
+  console.log("Profile data:", { courses, progress }); // Для отладки
 
   /**
    * Обработчик открытия модального окна выбора тренировки
@@ -118,6 +121,7 @@ export const ProfilePage = () => {
           (doc) => {
             if (doc.exists()) {
               const userData = doc.data();
+              console.log("User data from Firestore:", userData); // Для отладки
               // Обновляем данные в Redux store
               dispatch(
                 setUserCourses({
@@ -196,67 +200,80 @@ export const ProfilePage = () => {
   }, [userId, dispatch]);
 
   /**
+   * Проверяет, является ли тренировка полностью выполненной
+   * Тренировка считается выполненной, если прогресс = 100%
+   * @param {Object} workoutData - Данные тренировки
+   * @returns {boolean} true если тренировка выполнена полностью
+   */
+  const isWorkoutCompleted = (workoutData) => {
+    if (!workoutData) return false;
+
+    // Проверяем общий прогресс тренировки
+    return workoutData.progress === 100;
+  };
+
+  /**
    * Расчет прогресса прохождения курса
+   * Прогресс = (Количество выполненных тренировок / Общее количество тренировок) * 100%
    * @param {string} courseId - ID курса
    * @returns {number} Процент завершения (0-100)
    */
   const getCourseProgress = (courseId) => {
-    if (!progress[courseId]) return 0;
+    const courseProgress = progress[courseId];
+    console.log(`Progress for course ${courseId}:`, courseProgress); // Для отладки
+
+    if (!courseProgress) return 0;
 
     const course = courses.find((c) => c._id === courseId);
     if (!course?.workouts?.length) return 0;
 
-    let totalExercises = 0;
-    let completedExercises = 0;
+    const totalWorkouts = course.workouts.length;
+    let completedWorkouts = 0;
 
-    // Проходим по всем тренировкам курса
+    // Считаем количество выполненных тренировок
     course.workouts.forEach((workoutId) => {
-      const workoutData = progress[courseId].workouts?.[workoutId];
-      if (!workoutData) return;
+      const workoutData = courseProgress.workouts?.[workoutId];
+      console.log(`Workout ${workoutId} data:`, workoutData); // Для отладки
 
-      // Считаем прогресс по упражнениям
-      if (workoutData.exercisesProgress) {
-        Object.entries(workoutData.exercisesProgress).forEach(
-          ([exId, completed]) => {
-            const exercise = workoutData.exercises?.find((e) => e._id === exId);
-            if (exercise) {
-              totalExercises++;
-              const exerciseMax = exercise.quantity || 1;
-              completedExercises += Math.min(completed / exerciseMax, 1);
-            }
-          }
-        );
-      } else {
-        // Совместимость со старой версией (только общий прогресс)
-        totalExercises++;
-        completedExercises += (workoutData.progress || 0) / 100;
+      if (isWorkoutCompleted(workoutData)) {
+        completedWorkouts++;
       }
     });
 
-    return totalExercises > 0
-      ? Math.round((completedExercises / totalExercises) * 100)
-      : 0;
+    const progressPercent = Math.round(
+      (completedWorkouts / totalWorkouts) * 100
+    );
+    console.log(
+      `Course ${courseId} progress: ${completedWorkouts}/${totalWorkouts} = ${progressPercent}%`
+    ); // Для отладки
+
+    return progressPercent;
   };
 
-  // Эффект для подписки на изменения прогресса
-  useEffect(() => {
-    if (!userId) return;
+  /**
+   * Получает количество выполненных тренировок в курсе
+   * @param {string} courseId - ID курса
+   * @returns {Object} {completed: number, total: number}
+   */
+  const getWorkoutsCompletion = (courseId) => {
+    const courseProgress = progress[courseId];
+    if (!courseProgress) return { completed: 0, total: 0 };
 
-    const userRef = doc(db, "users", userId);
-    const unsubscribe = onSnapshot(userRef, (doc) => {
-      if (doc.exists()) {
-        const userData = doc.data();
-        dispatch(
-          setUserCourses({
-            courses: userData.courses || [],
-            progress: userData.progress || {},
-          })
-        );
+    const course = courses.find((c) => c._id === courseId);
+    if (!course?.workouts?.length) return { completed: 0, total: 0 };
+
+    const totalWorkouts = course.workouts.length;
+    let completedWorkouts = 0;
+
+    course.workouts.forEach((workoutId) => {
+      const workoutData = courseProgress.workouts?.[workoutId];
+      if (isWorkoutCompleted(workoutData)) {
+        completedWorkouts++;
       }
     });
 
-    return () => unsubscribe();
-  }, [userId, dispatch]); // Зависимости эффекта
+    return { completed: completedWorkouts, total: totalWorkouts };
+  };
 
   /**
    * Удаление курса из профиля пользователя
@@ -277,35 +294,14 @@ export const ProfilePage = () => {
       setRemovingCourseId(courseId); // Устанавливаем курс, который удаляем
       setError(null);
 
-      const userRef = doc(db, "users", userId);
-
-      // Используем транзакцию для безопасного обновления
-      await runTransaction(db, async (transaction) => {
-        const freshDoc = await transaction.get(userRef);
-        if (!freshDoc.exists()) {
-          transaction.set(userRef, {
-            courses: [],
-            progress: {},
-            createdAt: serverTimestamp(),
-          });
-          throw new Error("Профиль был создан. Повторите удаление.");
-        }
-
-        transaction.update(userRef, {
-          courses: arrayRemove(courseToRemove),
-          [`progress.${courseId}`]: deleteField(),
-        });
-      });
+      // Используем новую API функцию для удаления курса
+      await removeCourseFromUser(userId, courseId);
 
       // Обновляем состояние Redux store
       dispatch(removeCourse(courseId));
     } catch (error) {
       console.error("Ошибка удаления курса:", error);
-      setError(
-        error.code === "unavailable"
-          ? "Изменения будут сохранены при восстановлении соединения"
-          : "Не удалось удалить курс"
-      );
+      setError("Не удалось удалить курс");
     } finally {
       setRemovingCourseId(null);
     }
@@ -386,6 +382,7 @@ export const ProfilePage = () => {
 
               // Рассчитываем прогресс по курсу
               const progressPercent = getCourseProgress(course._id);
+              const workoutsStats = getWorkoutsCompletion(course._id);
               // Текст кнопки в зависимости от прогресса
               const buttonText =
                 progressPercent === 0
@@ -436,7 +433,10 @@ export const ProfilePage = () => {
                     {/* Прогресс-бар */}
                     <div>
                       <S.ProgressHeader>
-                        <span>Прогресс</span>
+                        <span>
+                          Тренировки:
+                          {/* {workoutsStats.completed}/{workoutsStats.total} */}
+                        </span>
                         <S.ProgressPercent>
                           {progressPercent}%
                         </S.ProgressPercent>

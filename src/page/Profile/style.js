@@ -548,7 +548,7 @@ export const ProgressBar = styled.div`
 
 export const ProgressBarFill = styled.div`
   height: 100%;
-  background-color: #bcec30;
+  background-color: #00c1ff;
   border-radius: 4px;
   width: ${(props) => props.$progress}%;
   transition: width 0.3s ease;

@@ -339,7 +339,8 @@ export const TrainingVideoPage = () => {
                         <S.ExerciseName>
                           {exercise.name}{" "}
                           <S.ExerciseReps>
-                            {completed}/{exercise.quantity} ({percentage}%)
+                            {/* {completed}/{exercise.quantity}  */}
+                            {percentage}%
                           </S.ExerciseReps>
                         </S.ExerciseName>
                       </S.ExerciseHeader>
