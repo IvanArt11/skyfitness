@@ -112,6 +112,7 @@ export const TrainingBlock = ({ courses }) => {
     if (!course || !course._id) return null; // Пропускаем некорректные курсы
 
     const isCourseAdded = addedCourses.has(course._id);
+    const tooltipText = isCourseAdded ? "Удалить курс" : "Добавить курс";
 
     return (
       <S.SectionTraining key={course._id}>
@@ -119,7 +120,8 @@ export const TrainingBlock = ({ courses }) => {
         <S.AddButton
           onClick={() => handleAddCourse(course)}
           $isAdded={isCourseAdded}
-          aria-label={isCourseAdded ? "Удалить курс" : "Добавить курс"}
+          aria-label={tooltipText}
+          title={tooltipText}
         >
           {isCourseAdded ? (
             <S.AddedIcon src="/img/added-icon.svg" alt="Курс добавлен" />

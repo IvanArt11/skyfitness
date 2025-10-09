@@ -104,17 +104,17 @@ export const Button = styled.button`
   border: 0;
   border-radius: 46px;
   padding: 16px 26px;
-  background-color: #bcec30;
+  background-color: #bcec30 !important;
   color: #000000;
   font-size: 18px;
   font-weight: 400;
 
   transition: background-color 0.2s ease-in-out;
   &:hover {
-    background-color: #c6ff00;
+    background-color: #c6ff00 !important;
   }
   &:active {
-    background-color: #000000;
+    background-color: #000000 !important;
     color: #ffffff;
   }
   &:disabled {
@@ -163,7 +163,8 @@ export const Inputs = styled.div`
   flex-direction: column;
   gap: 30px;
   width: 100%;
-  margin-bottom: 50px;
+  margin: 48px 0px 34px 0px;
+  background-color: inherit;
 `;
 
 export const LoginLogo = styled.div`
@@ -176,6 +177,7 @@ export const LoginLogo = styled.div`
 export const TitleInput = styled.p`
   font-size: 18px;
   margin-top: 38px;
+  background-color: inherit;
 `;
 
 export const TextExit = styled(TitleInput)`
@@ -444,17 +446,17 @@ export const viewAllCourses = styled.button`
   border: 0;
   border-radius: 46px;
   padding: 12px 41px;
-  background-color: #bcec30;
+  background-color: #bcec30 !important;
   color: #000000;
   font-size: 18px;
 
   transition: background-color 0.2s ease-in-out;
   &:hover {
-    background-color: #c6ff00;
+    background-color: #c6ff00 !important;
   }
   &:active {
     color: #ffffff;
-    background-color: #000000;
+    background-color: #000000 !important;
   }
   &:disabled {
     opacity: 0.5;
@@ -566,7 +568,7 @@ export const ProgressButton = styled(Link)`
   width: 100%;
   margin-top: 20px;
   padding: 12px 24px;
-  background-color: #bcec30;
+  background-color: #bcec30 !important;
   color: #000;
   text-align: center;
   border-radius: 46px;
@@ -576,11 +578,11 @@ export const ProgressButton = styled(Link)`
   transition: background-color 0.2s ease-in-out;
 
   &:hover {
-    background-color: #c6ff00;
+    background-color: #c6ff00 !important;
   }
 
   &:active {
-    background-color: #000;
+    background-color: #000 !important;
     color: #fff;
   }
 `;

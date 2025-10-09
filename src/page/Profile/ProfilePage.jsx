@@ -397,6 +397,7 @@ export const ProfilePage = () => {
                   <S.RemoveButton
                     onClick={() => handleRemoveCourse(course._id)}
                     disabled={removingCourseId === course._id}
+                    title="Удалить курс"
                   >
                     {removingCourseId === course._id ? (
                       <S.LoadingSpinner />
@@ -679,10 +680,9 @@ const NewPasswordForm = ({ setOpenEditPassword }) => {
           <img width={220} height={35} src="img/logo-dark.svg" alt="Логотип" />
         </S.LoginLogo>
         <S.Inputs>
-          <S.TitleInput>Новый пароль:</S.TitleInput>
           <S.Input
             type="password"
-            placeholder="Пароль (минимум 6 символов)"
+            placeholder="Новый пароль"
             value={newPass}
             onChange={(e) => {
               setNewPass(e.target.value);

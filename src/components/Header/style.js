@@ -91,10 +91,9 @@ export const PersonalMenuButton = styled.button`
   border: 0;
   width: 206px;
   font-size: 18px;
-  background: #BCEC30;
+  background: #bcec30;
   border-radius: 46px;
   padding: 16px 26px;
-
 
   &:hover {
     background-color: #c6ff00;
@@ -166,16 +165,17 @@ export const Button = styled.button`
   border: none;
   border-radius: 46px;
   padding: 12px 43px;
-  background-color: #580ea2;
-  color: #fff;
+  background-color: #bcec30;
+  color: #000000;
   font-size: 18px;
   margin-bottom: 15px;
   transition: background-color 0.2s ease-in-out;
   &:hover {
-    background-color: #3f007d;
+    background-color: #c6ff00;
   }
   &:active {
-    background-color: #271a58;
+    background-color: #000000;
+    color: #ffffff;
   }
   @media (max-width: 480px) {
     font-size: 12px;
