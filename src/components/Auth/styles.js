@@ -57,9 +57,10 @@ export const ModalLogoImage = styled.img`
 
 export const ModalInput = styled.input`
   width: 100%;
-  border: none;
-  border-bottom: 1px solid #d0cece;
-  padding: 8px 1px;
+  border: 1px solid #d0cece;
+  padding: 16px 18px;
+  border-radius: 8px;
+  background-color: #ffffff;
 
   &::placeholder {
     font-style: normal;

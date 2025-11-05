@@ -41,6 +41,11 @@ export const ProfileContainer = styled.div`
   padding: 30px;
   background-color: #ffffff;
   border-radius: 30px;
+
+  @media (max-width: 480px) {
+    display: flex;
+    justify-content: center;
+  }
 `;
 
 export const ProfileAvatarImg = styled.img`
@@ -48,8 +53,9 @@ export const ProfileAvatarImg = styled.img`
   height: 197px;
 
   @media (max-width: 480px) {
-    width: 150px;
-    height: 40px;
+    width: 141px;
+    height: 141px;
+    background-color: inherit;
   }
 `;
 
@@ -89,6 +95,7 @@ export const ButtonBlock = styled.div`
   gap: 14px;
   justify-content: space-around;
   flex-wrap: wrap;
+  background-color: inherit;
 
   @media (max-width: 768px) {
     margin-top: 15px;
@@ -122,7 +129,8 @@ export const Button = styled.button`
   }
   @media (max-width: 480px) {
     font-size: 12px;
-    padding: 8px 15px;
+    padding: 16px 26px;
+    width: 283px;
   }
 `;
 

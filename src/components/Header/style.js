@@ -22,6 +22,7 @@ export const HeaderLogoImg = styled.img`
   @media (max-width: 480px) {
     width: 150px;
     height: 40px;
+    ${'' /* background-color: inherit; */}
   }
 `;
 
@@ -153,9 +154,11 @@ export const TextExit = styled.p`
   margin-top: 38px;
   text-align: center;
   margin-bottom: 35px;
+  background-color: inherit;
   & b {
     color: #580ea2;
     text-decoration: underline;
+    background-color: inherit;
   }
 `;
 

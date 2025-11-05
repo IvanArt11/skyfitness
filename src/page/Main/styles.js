@@ -103,7 +103,7 @@ export const ContentFooterButton = styled.button`
   border: 0;
   border-radius: 46px;
   background-color: #c7e957;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 400;
   color: #000;
 

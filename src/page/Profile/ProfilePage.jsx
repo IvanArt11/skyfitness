@@ -364,7 +364,7 @@ export const ProfilePage = () => {
                 Редактировать логин
               </S.Button>
               <S.Button onClick={() => setOpenFormOldPassword(true)}>
-                Редактировать пароль
+                Изменить пароль
               </S.Button>
             </S.ButtonBlock>
           </S.InfoContainer>

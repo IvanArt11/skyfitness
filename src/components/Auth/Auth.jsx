@@ -458,7 +458,7 @@ export default function AuthPage({ isLoginMode = false }) {
               <S.ModalInput
                 type="text"
                 name="login"
-                placeholder="Почта"
+                placeholder="Эл. почта"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={disable}

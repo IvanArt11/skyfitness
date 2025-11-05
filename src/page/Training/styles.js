@@ -96,6 +96,10 @@ export const Description = styled.div`
     align-items: start;
     row-gap: 20px;
   }
+
+  @media (max-width: 425px) {
+    width: 343px;
+  }
 `;
 export const Circle = styled.div`
   display: flex;
@@ -118,11 +122,10 @@ export const Circle = styled.div`
     line-height: 28px;
   }
   @media (max-width: 425px) {
-    width: 25px;
-    height: 25px;
+    width: 35px;
+    height: 101px;
 
-    font-size: 14px;
-    line-height: 16px;
+    font-size: 75px;
   }
 `;
 export const DescriptionText = styled.p`
@@ -138,24 +141,22 @@ export const DescriptionText = styled.p`
     width: 100%;
   }
   @media (max-width: 425px) {
-    font-size: 20px;
-    line-height: 24px;
+    font-size: 18px;
   }
   @media (max-width: 375px) {
     font-size: 18px;
-    line-height: 20px;
   }
 `;
 export const DescriptionTextOne = styled.div`
   display: flex;
-  gap: 24px;
+  gap: 25px;
   background-color: #151720;
   border-radius: 28px;
   padding: 20px;
   align-items: center;
 
   @media (max-width: 425px) {
-    gap: 10px;
+    gap: 25px;
   }
 `;
 export const DirectionConteiner = styled.div`
@@ -193,6 +194,7 @@ export const YogaDirection = styled.div`
   }
   @media (max-width: 425px) {
     margin-top: 12px;
+    width: 343px;
   }
 `;
 export const YogaText = styled.li`
@@ -231,6 +233,12 @@ export const DiscriptionConteiner = styled.div`
   @media (max-width: 768px) {
     margin-top: 35px;
   }
+
+   @media (max-width: 425px) {
+    width: 343px;
+    margin-top: 35px;
+    padding: 30px;
+  }
 `;
 
 export const DiscriptionTitle = styled.h2`
@@ -246,8 +254,8 @@ export const DiscriptionTitle = styled.h2`
     line-height: 36px;
   }
   @media (max-width: 425px) {
-    font-size: 22px;
-    line-height: 26px;
+    font-size: 32px;
+    width: 343px;
   }
   @media (max-width: 375px) {
     font-size: 18px;
@@ -283,6 +291,7 @@ export const TextDiscriptionYoga = styled.p`
   @media (max-width: 425px) {
     font-size: 18px;
     line-height: 20px;
+    width: 343px;
   }
   @media (max-width: 375px) {
     font-size: 16px;
@@ -299,6 +308,12 @@ export const DiscriptionImg = styled.img`
   ${"" /* height: 542.49px; */}
   rotate: -2.99deg;
   background-color: #ffffff;
+
+  @media (max-width: 425px) {
+    width: 343px;
+    margin-top: 15px;
+    background-color: none;
+  }
 `;
 
 export const RecordBox = styled.div`
@@ -389,6 +404,12 @@ export const Direct = styled.ul`
   -webkit-column-count: 3;
   gap: 124px;
   background: #bcec30;
+
+  @media (max-width: 425px) {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 export const goToProfile = styled.button`
   width: 437px;
@@ -424,7 +445,7 @@ export const goToProfile = styled.button`
   }
 
   @media (max-width: 425px) {
-    font-size: 12px;
-    line-height: 16px;
+    font-size: 16px;
+    width: 343px;
   }
 `;

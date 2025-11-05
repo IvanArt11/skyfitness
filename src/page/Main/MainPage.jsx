@@ -106,7 +106,7 @@ export const MainPage = ({ courses = {} }) => {
             aria-label="Прокрутить страницу наверх"
             data-testid="scroll-top-button"
           >
-            Наверх
+            Наверх ↑
           </S.ContentFooterButton>
         </S.ContentFooter>
       </S.Container>
