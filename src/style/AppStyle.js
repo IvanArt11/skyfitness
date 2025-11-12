@@ -17,6 +17,7 @@ export const StyLeGlobal = createGlobalStyle`
   padding: 0;
   box-sizing: border-box;
   font-family: 'StratosSkyeng', sans-serif;
+  background-color: #FAFAFA;
 }
 
 a,
@@ -24,10 +25,12 @@ a:visited {
   text-decoration: none;
   cursor: pointer;
   color: inherit;
+  background-color: #ffffff;
 }
 
 button {
   cursor: pointer;
+  background-color: transparent;
 }
 
 input {

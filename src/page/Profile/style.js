@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
 export const Personal = styled.div`
   display: flex;
@@ -21,6 +22,7 @@ export const Title = styled.h1`
   margin-bottom: 40px;
   font-size: 48px;
   color: #000;
+
   @media (max-width: 768px) {
     margin-bottom: 20px;
     font-size: 36px;
@@ -31,12 +33,51 @@ export const Title = styled.h1`
   }
 `;
 
-export const InfoBlock = styled.div``;
+export const ProfileContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 33px;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 30px;
+
+  @media (max-width: 480px) {
+    display: flex;
+    justify-content: center;
+  }
+`;
+
+export const ProfileAvatarImg = styled.img`
+  width: 197px;
+  height: 197px;
+
+  @media (max-width: 480px) {
+    width: 141px;
+    height: 141px;
+    background-color: inherit;
+  }
+`;
+
+export const InfoContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  background-color: #ffffff;
+`;
+
+export const InfoBlock = styled.div`
+  background-color: #ffffff;
+`;
 
 export const TextInfo = styled.p`
   margin-bottom: 20px;
   font-size: 24px;
   color: #000;
+  background-color: #ffffff;
+
   @media (max-width: 768px) {
     margin-bottom: 12px;
     font-size: 20px;
@@ -50,9 +91,11 @@ export const TextInfo = styled.p`
 export const ButtonBlock = styled.div`
   width: fit-content;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 14px;
-  margin-top: 20px;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  background-color: inherit;
 
   @media (max-width: 768px) {
     margin-top: 15px;
@@ -64,27 +107,30 @@ export const ButtonBlock = styled.div`
 `;
 
 export const Button = styled.button`
-  width: 100%;
+  width: 192px;
   border: 0;
   border-radius: 46px;
-  padding: 12px 41px;
-  background-color: #580ea2;
-  color: #fff;
+  padding: 16px 26px;
+  background-color: #bcec30 !important;
+  color: #000000;
   font-size: 18px;
+  font-weight: 400;
 
   transition: background-color 0.2s ease-in-out;
   &:hover {
-    background-color: #3f007d;
+    background-color: #c6ff00 !important;
   }
   &:active {
-    background-color: #271a58;
+    background-color: #000000 !important;
+    color: #ffffff;
   }
   &:disabled {
     opacity: 0.5;
   }
   @media (max-width: 480px) {
     font-size: 12px;
-    padding: 8px 15px;
+    padding: 16px 26px;
+    width: 283px;
   }
 `;
 
@@ -125,7 +171,8 @@ export const Inputs = styled.div`
   flex-direction: column;
   gap: 30px;
   width: 100%;
-  margin-bottom: 50px;
+  margin: 48px 0px 34px 0px;
+  background-color: inherit;
 `;
 
 export const LoginLogo = styled.div`
@@ -138,6 +185,7 @@ export const LoginLogo = styled.div`
 export const TitleInput = styled.p`
   font-size: 18px;
   margin-top: 38px;
+  background-color: inherit;
 `;
 
 export const TextExit = styled(TitleInput)`
@@ -169,79 +217,121 @@ export const CourseBlock = styled.div`
   margin-top: 61px;
 `;
 
+// Адаптивные стили
 export const CourseItems = styled.div`
   display: flex;
   flex-wrap: wrap;
-  justify-content: start;
-  gap: 20px;
+  gap: 40px;
+  margin-top: 52px;
 
-  @media (max-width: 480px) {
-    gap: 20px;
+  @media (max-width: 1219px) {
     justify-content: center;
+  }
+  @media (max-width: 620px) {
+    margin-top: 30px;
   }
 `;
 
-export const Item = styled.div`
+// Стили для карточек курсов
+export const SectionTraining = styled.div`
   position: relative;
-
   transition: transform 0.3s ease-in-out;
   &:hover {
     transform: translateY(-5px);
   }
-  @media (max-width: 620px) {
-    width: 100%;
-  }
+  background-color: #ffffff;
+  border-radius: 30px;
+  padding-bottom: 15px;
+  display: flex;
+  flex-direction: column;
 `;
 
-export const ItemTitle = styled.h2`
-  position: absolute;
-  font-size: 36px;
-  top: 30px;
-  left: 30px;
-
-  @media (max-width: 800px) {
-    font-size: 20px;
-  }
-`;
-
-export const ItemImg = styled.img`
-  width: 360px;
-  height: 480px;
-  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+export const ImgTraining = styled.img`
+  max-width: 360px;
+  max-height: 480px;
+  box-shadow: 10px -10px 16px 0px #0000001a;
   border-radius: 30px;
 
-  @media (max-width: 800px) {
-    width: 270px;
-    height: 360px;
+  @media (max-width: 819px) and (min-width: 620px) {
+    width: 260px;
   }
   @media (max-width: 620px) {
     width: 100%;
-    height: auto;
+    font-size: 14px;
+    line-height: 16px;
   }
 `;
-export const GreenButton = styled.button`
-  width: 136px;
-  height: 43px;
-  border: 0;
-  border-radius: 80px;
-  padding: 10px 15px;
-  background-color: #c7e957;
-  font-size: 20px;
+
+export const TrainingContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 20px 0px 0px 20px;
+  max-width: 300px;
+  background-color: #ffffff;
+`;
+
+export const TitleTraining = styled.p`
+  font-size: 36px;
+  font-weight: 800;
+  background-color: #ffffff;
+
+  @media (max-width: 819px) {
+    font-size: 22px;
+    line-height: 24px;
+  }
+`;
+
+export const InfoItems = styled.div`
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  gap: 6px;
+  background-color: #ffffff;
+`;
+
+export const InfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  background-color: #f7f7f7;
+  padding: 10px;
+  gap: 6px;
+  border-radius: 50px;
+`;
+
+export const InfoIcon = styled.img`
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+`;
+
+export const InfoText = styled.span`
+  font-size: 16px;
+  color: #202020;
+  font-weight: 400;
+`;
+
+export const AddButton = styled.button`
   position: absolute;
-  bottom: 30px;
-  left: 30px;
-  transition: background-color 0.2s ease-in-out;
+  background: none;
+  top: 20px;
+  right: 20px;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
   &:hover {
-    background-color: #daf289;
-  }
-  &:active {
-    background-color: #ebffab;
-  }
-  @media (max-width: 480px) {
-    font-size: 10px;
-    width: 72px;
-    height: 25px;
-    padding: 0 5px;
+    transform: scale(1.1);
   }
 `;
 
@@ -364,18 +454,192 @@ export const viewAllCourses = styled.button`
   border: 0;
   border-radius: 46px;
   padding: 12px 41px;
-  background-color: #580ea2;
-  color: #fff;
+  background-color: #bcec30 !important;
+  color: #000000;
   font-size: 18px;
 
   transition: background-color 0.2s ease-in-out;
   &:hover {
-    background-color: #3f007d;
+    background-color: #c6ff00 !important;
   }
   &:active {
-    background-color: #271a58;
+    color: #ffffff;
+    background-color: #000000 !important;
   }
   &:disabled {
     opacity: 0.5;
+  }
+`;
+
+export const LoadingSpinner = styled.div`
+  width: 30px;
+  height: 30px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #bcec30;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+export const RemoveButton = styled.button`
+  position: absolute;
+  background: ${(props) => (props.disabled ? "#f0f0f0" : "none")};
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ${(props) => (props.disabled ? "wait" : "pointer")};
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.1);
+  }
+`;
+
+export const AddedIcon = styled.img`
+  filter: brightness(0) invert(1);
+  background: none;
+`;
+
+export const NoCoursesMessage = styled.div`
+  font-size: 24px;
+  color: #000;
+  margin-top: 20px;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
+`;
+
+export const ProgressHeader = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 20px 0px 10px 0px;
+  font-size: 18px;
+  gap: 6px;
+  color: #000000;
+  background-color: #ffffff;
+`;
+
+export const ProgressPercent = styled.span`
+  font-weight: 400;
+  font-size: 18px;
+  color: #000000;
+`;
+
+// Улучшаем стиль прогресс-бара
+export const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+`;
+
+export const ProgressBarFill = styled.div`
+  height: 100%;
+  background-color: #00c1ff;
+  border-radius: 4px;
+  width: ${(props) => props.$progress}%;
+  transition: width 0.3s ease;
+`;
+
+export const ProgressText = styled.span`
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+  color: #000;
+`;
+
+export const ProgressButton = styled(Link)`
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #bcec30 !important;
+  color: #000;
+  text-align: center;
+  border-radius: 46px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    background-color: #c6ff00 !important;
+  }
+
+  &:active {
+    background-color: #000 !important;
+    color: #fff;
+  }
+`;
+
+// Стиль для состояния загрузки
+export const Loading = styled.div`
+  text-align: center;
+  font-size: 18px;
+  margin: 50px 0;
+  color: #666;
+`;
+
+// Стиль для текста ошибки
+export const ErrorText = styled.p`
+  color: tomato;
+  margin: -15px 0 15px;
+  font-size: 14px;
+`;
+
+export const ErrorMessage = styled.div`
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  border: 1px solid #ef9a9a;
+`;
+
+export const OfflineWarning = styled.div`
+  padding: 10px 20px;
+  background-color: #fff3e0;
+  color: #e65100;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:before {
+    content: "⚠️";
+    margin-right: 8px;
   }
 `;

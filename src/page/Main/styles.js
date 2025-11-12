@@ -6,7 +6,7 @@ export const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #271a58;
+  background-color: #FAFAFA;
   padding: 0 30px;
 `;
 export const Container = styled.div`
@@ -28,9 +28,9 @@ export const ContentDescription = styled.div`
 `;
 
 export const ContentDescriptionPreTitle = styled.h3`
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: #000000;
 
   @media (max-width: 620px) {
     font-size: 14px;
@@ -40,10 +40,10 @@ export const ContentDescriptionPreTitle = styled.h3`
 
 export const ContentDescriptionTitle = styled.h1`
   font-size: 60px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 68px;
-  color: #f4f4f4;
-  max-width: 840px;
+  color: #000000;
+  max-width: 947px;
 
   @media (max-width: 1219px) {
     text-align: center;
@@ -68,9 +68,9 @@ export const ContentDescriptionTitle = styled.h1`
 
 export const ContentDescriptionImg = styled.img`
   position: absolute;
-  top: 18px;
+  top: 40px;
   right: -45px;
-  transform: rotate(15deg);
+  ${'' /* transform: rotate(15deg); */}
 
   @media (max-width: 1285px) {
     display: none;
@@ -103,7 +103,7 @@ export const ContentFooterButton = styled.button`
   border: 0;
   border-radius: 46px;
   background-color: #c7e957;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 400;
   color: #000;
 
@@ -113,5 +113,33 @@ export const ContentFooterButton = styled.button`
 
   &:active {
     background-color: #ebffab;
+  }
+`;
+
+export const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 20px;
+`;
+
+export const ErrorMessage = styled.p`
+  color: #ff0000;
+  margin-bottom: 20px;
+  text-align: center;
+`;
+
+export const RetryButton = styled.button`
+  padding: 10px 20px;
+  background-color: #580ea2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #3f007d;
   }
 `;

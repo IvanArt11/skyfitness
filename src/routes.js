@@ -8,23 +8,68 @@ import { LoginPage } from "./page/LogIn/LoginPage";
 import { TrainingVideoPage } from "./page/TrainingVideo/TrainingVideoPage";
 import { PageLayout } from "./components/PageLayout/PageLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import useCourses from "./hooks/useCourses"; // Импортируем хук для загрузки курсов
 
-export const AppRoutes = ({ courses }) => {
+// Компоненты с загрузкой данных только когда нужно
+const MainPageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <MainPage courses={courses} />;
+};
+
+const TrainingPageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <TrainingPage courses={courses} />;
+};
+
+const ProfilePageWithCourses = () => {
+  const { courses, loading, error } = useCourses();
+
+  if (loading) return <div>Загрузка курсов...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return <ProfilePage courses={courses} />;
+};
+
+/**
+ * Компонент маршрутизации приложения.
+ */
+export const AppRoutes = () => {
   return (
     <Routes>
-      <Route element={<ProtectedRoute redirectPath={"/login"} />}>
-        <Route index element={<MainPage courses={courses} />} />
-        <Route path="/" element={<PageLayout />}>
+      {/* Главная страница доступна всем */}
+      <Route index element={<MainPageWithCourses />} />
+
+      {/* Общий макет для страниц, которые используют PageLayout */}
+      <Route path="/" element={<PageLayout />}>
+        {/* Страница курса доступна всем */}
+        <Route path="courses/:_id" element={<TrainingPageWithCourses />} />
+
+        {/* Защищённые маршруты */}
+        <Route element={<ProtectedRoute redirectPath="/login" />}>
+          {/* Страница с видео тренировки доступна только авторизованным пользователям */}
           <Route
-            path="/courses/:id"
-            element={<TrainingPage courses={courses} />}
+            path="training-video/:courseId/:workoutId"
+            element={<TrainingVideoPage />}
           />
-          <Route path="/training-video/:id" element={<TrainingVideoPage />} />
-          <Route path="/profile" element={<ProfilePage courses={courses} />} />
+
+          {/* Страница профиля доступна только авторизованным пользователям */}
+          <Route path="profile" element={<ProfilePageWithCourses />} />
         </Route>
-        <Route path="/signup" element={<SignUpPage />} />
       </Route>
+
+      {/* Страницы регистрации и входа доступны всем */}
+      <Route path="/signup" element={<SignUpPage />} />
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Страница 404 (не найдено) */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

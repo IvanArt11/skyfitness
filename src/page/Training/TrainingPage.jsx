@@ -1,156 +1,159 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import * as S from "./styles";
 import { TrainingSkillSkeleton } from "../../components/Skeletons/ТrainingSkillSkeleton";
-import React, { useEffect, useState } from "react";
-import { getWorkout } from "../../api";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "../../hooks/use-auth";
+import PropTypes from "prop-types";
+import { useDispatch, useSelector } from "react-redux";
+import { addCourse } from "../../store/slices/userSlice"; // Импортируем action для добавления курса
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../../firebase";
 
-export const TrainingPage = ({ courses }) => {
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [allCourses, setAllCoueses] = useState(null);
-  const [dataCourse, setDataCourse] = useState(null);
+/**
+ * Страница курса.
+ * @param {Object} courses - Данные курсов
+ */
+export const TrainingPage = ({ courses = {} }) => {
+  const [dataCourse, setDataCourse] = useState({}); // Данные текущего курса
+  const [error, setError] = useState(null); // Состояние ошибки
 
   const navigate = useNavigate();
   const param = useParams();
-  let scills = Object.values(courses).find((course) => course.id === param.id);
+  const { isAuth, id: userId } = useAuth(); // Получаем состояние авторизации и ID пользователя
+  const dispatch = useDispatch();
+  const userCourses = useSelector((state) => state.user.courses); // Получаем список курсов пользователя из Redux
 
-  const userId = useAuth().id;
+  // Поиск текущего курса по ID
+  const scills = useMemo(() => {
+    return Object.values(courses).find((course) => course._id === param._id);
+  }, [courses, param._id]);
 
+  // Загрузка данных курса
   useEffect(() => {
-    const fetchData = () => {
-      getWorkout()
-        .then((data) => {
-          setAllCoueses(data);
-          setIsLoading(false);
-          for (let item in data) {
-            if (data[item]._id === param.id) {
-              setDataCourse(data[item]);
-              setIsLoading(false);
-            }
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching workout data:", error);
-        });
-    };
-    fetchData();
-  }, []);
-
-  const fillEmptyArray = (num) => {
-    const newArray = [];
-    for (let i = 0; i < num; i++) {
-      newArray.push(0);
+    if (scills) {
+      setDataCourse(scills);
+    } else {
+      setError("Курс не найден");
     }
-    return newArray;
-  };
+  }, [scills]);
 
-  const handleClickRecord = () => {
-    const arrayCourses = [];
-    courses[dataCourse._id].workout.forEach((item) => {
-      arrayCourses.push(allCourses[item]);
-    });
+  // Проверка, добавлен ли курс пользователем
+  const isCourseAdded = useMemo(() => {
+    return userCourses?.some((course) => course._id === scills?._id);
+  }, [userCourses, scills]);
 
-    const patchData = {};
-    arrayCourses.forEach((course) => {
-      const userToAdd = {
-        progress: fillEmptyArray(
-          course.exercises ? course.exercises.length : 1
-        ),
-        userId: userId,
-      };
-      patchData[`workout/${course.shortId}/users`] = [
-        ...(course.users || []),
-        userToAdd,
-      ];
-    });
-    fetch(
-      "https://skyfitnesspro-workout-default-rtdb.europe-west1.firebasedatabase.app/.json",
-      {
-        method: "PATCH",
-        body: JSON.stringify(patchData),
+  // Обработчик добавления курса
+  const handleAddCourse = useCallback(async () => {
+    try {
+      if (!isAuth) {
+        navigate("/login"); // Если пользователь не авторизован, перенаправляем на /login
+        return;
       }
-    )
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Ошибка при обновлении данных");
-        }
-        console.log("Данные успешно обновлены");
-        navigate("/profile", { replace: true });
-      })
-      .catch((error) => console.error(error));
-  };
+
+      if (!scills) {
+        throw new Error("Курс не найден");
+      }
+
+      // Добавляем курс в Firestore
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, {
+        courses: arrayUnion(scills),
+      });
+
+      // Добавляем курс в Redux
+      dispatch(addCourse(scills));
+      navigate("/profile"); // Перенаправляем на страницу профиля
+    } catch (error) {
+      console.error("Ошибка добавления курса:", error);
+      setError("Не удалось добавить курс. Попробуйте позже.");
+    }
+  }, [isAuth, scills, dispatch, navigate, userId]);
+
+  // Отображение ошибки
+  if (error) {
+    return <div>Произошла ошибка: {error}</div>;
+  }
+
+  // Отображение скелетона при загрузке
+  if (!scills) {
+    return <TrainingSkillSkeleton />;
+  }
 
   return (
     <div>
-      {isLoading ? (
-        <>
-          <TrainingSkillSkeleton />
-        </>
-      ) : (
-        <>
-          <S.ScillCard>
-            <S.ScillImg src="/img/Group.jpg" alt="scill"></S.ScillImg>
-            <S.ScillTitle>{scills?.name}</S.ScillTitle>
-          </S.ScillCard>
+      <S.ScillCard>
+        <S.ScillImg
+          src={`/img/training/skill card-${scills.nameEN}.jpg`}
+          alt="scill"
+        />
+      </S.ScillCard>
 
-          <S.ScillDescription>
-            <S.ScillDescriptionTitle>
-              Подойдет для вас, если:
-            </S.ScillDescriptionTitle>
+      <S.ScillDescription>
+        <S.ScillDescriptionTitle>
+          Подойдет для вас, если:
+        </S.ScillDescriptionTitle>
 
-            <S.Description>
-              <S.DescriptionTextOne>
-                <S.Circle>1</S.Circle>
-                <S.DescriptionText>{scills?.towards[0]}</S.DescriptionText>
-              </S.DescriptionTextOne>
+        <S.Description>
+          {scills?.fitting?.map((item, index) => (
+            <S.DescriptionTextOne key={index}>
+              <S.Circle>{index + 1}</S.Circle>
+              <S.DescriptionText>{item}</S.DescriptionText>
+            </S.DescriptionTextOne>
+          ))}
+        </S.Description>
+      </S.ScillDescription>
 
-              <S.DescriptionTextOne>
-                <S.Circle>2</S.Circle>
-                <S.DescriptionText>{scills?.towards[1]}</S.DescriptionText>
-              </S.DescriptionTextOne>
+      <S.DirectionConteiner>
+        <S.ScillDescriptionTitle>Направления:</S.ScillDescriptionTitle>
+        <S.YogaDirection>
+          <S.Direct>
+            {scills?.directions?.map((item, index) => (
+              <S.YogaText key={index}>{item}</S.YogaText>
+            ))}
+          </S.Direct>
+        </S.YogaDirection>
+      </S.DirectionConteiner>
 
-              <S.DescriptionTextOne>
-                <S.Circle>3</S.Circle>
-                <S.DescriptionText>{scills?.towards[2]}</S.DescriptionText>
-              </S.DescriptionTextOne>
-            </S.Description>
-          </S.ScillDescription>
+      <S.DiscriptionConteiner>
+        <S.DiscriptionYoga>
+          <S.DiscriptionTitle>Начните путь к новому телу</S.DiscriptionTitle>
+          <S.TextDiscriptionYoga>{scills?.description}</S.TextDiscriptionYoga>
 
-          <S.DirectionConteiner>
-            <S.DescriptionText>Направления:</S.DescriptionText>
-            <S.YogaDirection>
-              <S.Direct>
-                {scills?.directions.map((item, index) => (
-                  <S.YogaText key={index}>{item}</S.YogaText>
-                ))}
-              </S.Direct>
-            </S.YogaDirection>
-          </S.DirectionConteiner>
-          <S.DiscriptionYoga>
-            <S.TextDiscriptionYoga>{scills?.description}</S.TextDiscriptionYoga>
-          </S.DiscriptionYoga>
-
-          {!dataCourse.users.find((obj) => obj.userId === userId) ? (
-            <S.RecordBox>
-              <S.RecordText>
-                Оставьте заявку на пробное занятие, мы свяжемся с вами, поможем
-                с выбором направления и тренера, с которым тренировки принесут
-                здоровье и радость!
-              </S.RecordText>
-
-              <S.btnRecord onClick={handleClickRecord}>
-                Записаться на тренировку
-              </S.btnRecord>
-
-              <S.PhoneImg src="/img/phone.svg" alt="phone" />
-            </S.RecordBox>
-          ) : (
+          {isCourseAdded ? ( // Если курс уже добавлен
             <Link to={"/profile"}>
-              <S.goToProfile>перейти в профиль</S.goToProfile>
+              <S.goToProfile>Перейти в профиль</S.goToProfile>
+            </Link>
+          ) : isAuth ? ( // Если пользователь авторизован
+            <S.btnRecord onClick={handleAddCourse}>Добавить курс</S.btnRecord>
+          ) : (
+            // Если пользователь не авторизован
+            <Link to={"/login"}>
+              <S.btnRecord>Войдите, чтобы добавить курс</S.btnRecord>
             </Link>
           )}
-        </>
-      )}
+        </S.DiscriptionYoga>
+        <S.DiscriptionImg src={`/img/training/Mask group.svg`} alt="scill" />
+      </S.DiscriptionConteiner>
+
+      {/* {isCourseAdded ? ( // Если курс уже добавлен
+        <Link to={"/profile"}>
+          <S.goToProfile>Перейти в профиль</S.goToProfile>
+        </Link>
+      ) : isAuth ? ( // Если пользователь авторизован
+        <S.btnRecord onClick={handleAddCourse}>Добавить курс</S.btnRecord>
+      ) : (
+        // Если пользователь не авторизован
+        <Link to={"/login"}>
+          <S.btnRecord>Войдите, чтобы добавить курс</S.btnRecord>
+        </Link>
+      )} */}
     </div>
   );
 };
+
+// Проверка типов пропсов
+TrainingPage.propTypes = {
+  courses: PropTypes.object.isRequired,
+};
+
+export default TrainingPage;

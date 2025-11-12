@@ -123,3 +123,60 @@ export const Error = styled.div`
   margin-top: 20px;
   text-align: left;
 `;
+
+// Добавьте эти стили в ваш styles.js файл
+
+export const UserInfo = styled.div`
+  background: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+`;
+
+export const PasswordRequirements = styled.div`
+  background: #fff8e1;
+  border: 1px solid #ffecb3;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 15px 0;
+`;
+
+export const SecurityWarning = styled.div`
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 20px;
+`;
+
+// Если этих стилей еще нет, добавьте их:
+export const SuccessMessage = styled.div`
+  color: #2e8b57;
+  background: #f0fff0;
+  border: 1px solid #90ee90;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 14px;
+`;
+
+export const InfoText = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin: 5px 0;
+  line-height: 1.4;
+`;
+
+export const SupportTitle = styled.h4`
+  color: #000;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+`;
+
+export const SupportText = styled.p`
+  color: #666;
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.4;
+`;

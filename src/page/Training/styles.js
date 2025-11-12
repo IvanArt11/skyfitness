@@ -29,10 +29,10 @@ export const ScillImg = styled.img`
 `;
 export const ScillTitle = styled.h1`
   position: absolute;
-  top: 30px;
-  left: 30px;
+  top: 40px;
+  left: 40px;
   z-index: 10;
-  color: #000;
+  color: #ffffff;
   font-size: 64px;
   font-style: normal;
   font-weight: 400;
@@ -66,8 +66,8 @@ export const ScillDescriptionTitle = styled.h2`
   color: #000;
   font-size: 40px;
   font-style: normal;
-  font-weight: 400;
-  line-height: 48px;
+  font-weight: 600;
+  line-height: 44px;
 
   @media (max-width: 767px) {
     font-size: 32px;
@@ -85,8 +85,8 @@ export const ScillDescriptionTitle = styled.h2`
 export const Description = styled.div`
   margin-top: 40px;
   display: flex;
-  flex-wrap: wrap;
-  column-gap: 10px;
+  flex-wrap: nowrap;
+  column-gap: 17px;
   row-gap: 40px;
   justify-content: space-between;
 
@@ -96,23 +96,23 @@ export const Description = styled.div`
     align-items: start;
     row-gap: 20px;
   }
+
+  @media (max-width: 425px) {
+    width: 343px;
+  }
 `;
 export const Circle = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #151720;
+  border-radius: 28px;
 
-  border-radius: 50%;
-  background: #c7e957;
-  display: flex;
-  width: 45.6px;
-  height: 45.6px;
-
-  color: #000;
-  font-size: 32px;
+  color: #bcec30;
+  font-size: 75px;
   font-style: normal;
-  font-weight: 400;
-  line-height: 40px;
+  font-weight: 500;
+  line-height: 135%;
 
   @media (max-width: 767px) {
     width: 35px;
@@ -122,39 +122,41 @@ export const Circle = styled.div`
     line-height: 28px;
   }
   @media (max-width: 425px) {
-    width: 25px;
-    height: 25px;
+    width: 35px;
+    height: 101px;
 
-    font-size: 14px;
-    line-height: 16px;
+    font-size: 75px;
   }
 `;
 export const DescriptionText = styled.p`
-  color: #000;
+  color: #ffffff;
   font-size: 24px;
   font-style: normal;
   font-weight: 400;
-  line-height: 32px;
-  width: 244px;
+  line-height: 110.00000000000001%;
+  background-color: #151720;
+  ${"" /* width: 244px; */}
 
   @media (max-width: 767px) {
     width: 100%;
   }
   @media (max-width: 425px) {
-    font-size: 20px;
-    line-height: 24px;
+    font-size: 18px;
   }
   @media (max-width: 375px) {
     font-size: 18px;
-    line-height: 20px;
   }
 `;
 export const DescriptionTextOne = styled.div`
   display: flex;
-  gap: 24px;
+  gap: 25px;
+  background-color: #151720;
+  border-radius: 28px;
+  padding: 20px;
+  align-items: center;
 
   @media (max-width: 425px) {
-    gap: 10px;
+    gap: 25px;
   }
 `;
 export const DirectionConteiner = styled.div`
@@ -172,14 +174,19 @@ export const DirectionText = styled.h3`
   line-height: 48px;
 `;
 export const YogaDirection = styled.div`
-  width: 660px;
+  max-width: 1160px;
   margin-top: 22px;
-  margin-left: 25px;
+  ${"" /* margin-left: 25px; */}
   display: flex;
   justify-content: space-between;
+  background-color: #bcec30;
+  border-radius: 28px;
+  padding: 30px;
+  gap: 124px;
 
   @media (max-width: 768px) {
     width: calc(100% - 25px);
+    height: 100%;
   }
 
   @media (max-width: 540px) {
@@ -187,14 +194,22 @@ export const YogaDirection = styled.div`
   }
   @media (max-width: 425px) {
     margin-top: 12px;
+    width: 343px;
   }
 `;
 export const YogaText = styled.li`
   color: #000;
+  background: #bcec30;
   font-size: 24px;
   font-style: normal;
   font-weight: 400;
   line-height: 32px;
+  list-style-type: none; /* Убираем стандартные маркеры списка */
+  padding-left: 30px; /* Отступ для фонового изображения */
+  background-image: url("/img/Sparcle.svg");
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 26px 26px; /* Размер фонового изображения */
 
   @media (max-width: 425px) {
     font-size: 18px;
@@ -205,8 +220,55 @@ export const YogaText = styled.li`
     line-height: 20px;
   }
 `;
+
+export const DiscriptionConteiner = styled.div`
+  margin-top: 102px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background-color: #ffffff;
+  border-radius: 30px;
+  padding: 40px;
+
+  @media (max-width: 768px) {
+    margin-top: 35px;
+  }
+
+   @media (max-width: 425px) {
+    width: 343px;
+    margin-top: 35px;
+    padding: 30px;
+  }
+`;
+
+export const DiscriptionTitle = styled.h2`
+  color: #000000;
+  font-size: 60px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+  background-color: #ffffff;
+
+  @media (max-width: 767px) {
+    font-size: 32px;
+    line-height: 36px;
+  }
+  @media (max-width: 425px) {
+    font-size: 32px;
+    width: 343px;
+  }
+  @media (max-width: 375px) {
+    font-size: 18px;
+    line-height: 20px;
+  }
+`;
+
 export const DiscriptionYoga = styled.div`
-  margin-top: 75px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 437px;
+  background-color: #ffffff;
 
   @media (max-width: 425px) {
     margin-top: 35px;
@@ -219,6 +281,7 @@ export const TextDiscriptionYoga = styled.p`
   font-weight: 400;
   line-height: 32px;
   width: 100%;
+  background-color: #ffffff;
 
   @media (max-width: 768px) {
     font-size: 20px;
@@ -228,6 +291,7 @@ export const TextDiscriptionYoga = styled.p`
   @media (max-width: 425px) {
     font-size: 18px;
     line-height: 20px;
+    width: 343px;
   }
   @media (max-width: 375px) {
     font-size: 16px;
@@ -238,6 +302,20 @@ export const TextDiscriptionYoga = styled.p`
     line-height: 16px;
   }
 `;
+
+export const DiscriptionImg = styled.img`
+  ${"" /* width: 487px; */}
+  ${"" /* height: 542.49px; */}
+  rotate: -2.99deg;
+  background-color: #ffffff;
+
+  @media (max-width: 425px) {
+    width: 343px;
+    margin-top: 15px;
+    background-color: none;
+  }
+`;
+
 export const RecordBox = styled.div`
   position: relative;
   margin-top: 75px;
@@ -276,22 +354,30 @@ export const RecordText = styled.p`
   }
 `;
 export const btnRecord = styled.button`
-  width: fit-content;
+  width: 437px;
   border-radius: 46px;
-  background: #580ea2;
+  background-color: #bcec30;
   margin-top: 34px;
   border: 0;
-  padding: 12px 24px;
+  padding: 16px 0px;
 
-  color: #fff;
+  color: #000000;
   font-size: 18px;
   font-style: normal;
   font-weight: 400;
   line-height: 24px;
   letter-spacing: -0.05px;
+  transition: background-color 0.2s ease-in-out;
 
-  :hover {
-    background: #3f007d;
+  &:hover {
+    background-color: #c6ff00;
+  }
+  &:active {
+    color: #ffffff;
+    background-color: #000000;
+  }
+  &:disabled {
+    opacity: 0.5;
   }
 
   @media (max-width: 768px) {
@@ -315,24 +401,41 @@ export const PhoneImg = styled.img`
 `;
 export const Direct = styled.ul`
   list-style-position: inside;
-  -webkit-column-count: 2;
+  -webkit-column-count: 3;
+  gap: 124px;
+  background: #bcec30;
+
+  @media (max-width: 425px) {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 export const goToProfile = styled.button`
+  width: 437px;
   border-radius: 46px;
-  background: #580ea2;
+  background-color: #bcec30;
   margin-top: 34px;
   border: 0;
-  padding: 12px 24px;
+  padding: 16px 0px;
 
-  color: #fff;
+  color: #000000;
   font-size: 18px;
   font-style: normal;
   font-weight: 400;
   line-height: 24px;
   letter-spacing: -0.05px;
+  transition: background-color 0.2s ease-in-out;
 
-  :hover {
-    background: #3f007d;
+  &:hover {
+    background-color: #c6ff00;
+  }
+  &:active {
+    color: #ffffff;
+    background-color: #000000;
+  }
+  &:disabled {
+    opacity: 0.5;
   }
 
   @media (max-width: 768px) {
@@ -342,7 +445,7 @@ export const goToProfile = styled.button`
   }
 
   @media (max-width: 425px) {
-    font-size: 12px;
-    line-height: 16px;
+    font-size: 16px;
+    width: 343px;
   }
 `;
